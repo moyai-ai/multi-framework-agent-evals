@@ -1,8 +1,8 @@
 [project]
-name = "openai-cs-agents-demo"
+name = "cs-agents-demo"
 version = "0.1.0"
 description = "OpenAI Agents SDK Customer Service Demo"
-readme = "src/README.md"
+readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "openai-agents>=0.1.0",

@@ -44,19 +44,9 @@ cd openai-cs-agents-demo/src
 ```
 
 2. Install dependencies:
+sync with uv:
 ```bash
-pip install -r requirements.txt
-```
-
-Or sync with uv:
-```bash
-unset VIRTUAL_ENV && uv sync
-```
-
-3. Set up your OpenAI API key:
-```bash
-cp .env.example .env
-# Edit .env and add your API key
+unset VIRTUAL_ENV && uv sync --dev
 ```
 
 ## Usage
@@ -65,13 +55,13 @@ cp .env.example .env
 
 Execute a single scenario:
 ```bash
-uv run --env-file .env python -m src.runner scenarios/seat_change.json --verbose
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner scenarios/seat_change.json --verbose
 ```
 
 Run all scenarios:
 ```bash
 for scenario in scenarios/*.json; do
-    uv run --env-file .env python -m src.runner "$scenario" --verbose
+    unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner "$scenario" --verbose
 done
 ```
 
@@ -79,7 +69,7 @@ done
 
 Run all tests:
 ```bash
-pytest tests/ -v
+unset VIRTUAL_ENV && uv run --env-file .env pytest tests/ -v
 ```
 
 Run specific test categories:
@@ -88,10 +78,10 @@ Run specific test categories:
 pytest tests/test_agents.py::TestContext -v
 
 # Integration tests (requires API key)
-OPENAI_API_KEY=your-key pytest tests/test_agents.py::TestIntegration -v
+unset VIRTUAL_ENV && uv run --env-file .env pytest tests/test_agents.py::TestIntegration -v
 
 # Full scenario tests
-RUN_FULL_SCENARIOS=1 pytest tests/test_agents.py::TestIntegration::test_full_scenarios -v
+unset VIRTUAL_ENV && RUN_FULL_SCENARIOS=1 uv run --env-file .env pytest tests/test_agents.py::TestIntegration::test_full_scenarios -v
 ```
 
 ### Scenario JSON Format
@@ -195,7 +185,7 @@ Each scenario turn can validate:
 ## Example Execution
 
 ```bash
-$ uv run --env-file .env python -m src.runner scenarios/seat_change.json --verbose
+$ unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner scenarios/seat_change.json --verbose
 
 ============================================================
 Running Scenario: Seat Change Scenario
@@ -270,7 +260,7 @@ async def tool_name(param1: str) -> str:
 
 1. Create JSON file in `scenarios/` directory
 2. Define conversation flow with expectations
-3. Run with: `uv run --env-file .env python -m src.runner scenarios/your_scenario.json`
+3. Run with: `unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner scenarios/your_scenario.json`
 
 ## Testing Best Practices
 

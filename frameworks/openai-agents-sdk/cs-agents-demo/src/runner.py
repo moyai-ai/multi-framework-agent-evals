@@ -17,6 +17,7 @@ from dataclasses import dataclass, asdict
 
 from agents import (
     Runner,
+    RunConfig,
     MessageOutputItem,
     HandoffOutputItem,
     ToolCallItem,
@@ -28,11 +29,6 @@ from .context import AirlineAgentContext, create_test_context, context_diff
 from .guardrails import get_guardrail_message
 
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 
@@ -170,7 +166,8 @@ class ScenarioRunner:
             result = await Runner.run(
                 self.current_agent,
                 self.input_items,
-                context=self.context
+                context=self.context,
+                run_config=RunConfig(workflow_name="CS Agent Workflow")
             )
         except Exception as e:
             logger.error(f"Error running agent: {e}")
@@ -418,6 +415,12 @@ async def main():
     Main entry point for running scenarios from command line.
     """
     import argparse
+
+    # Configure logging for CLI usage
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
 
     parser = argparse.ArgumentParser(
         description='Run agent test scenarios from JSON files'

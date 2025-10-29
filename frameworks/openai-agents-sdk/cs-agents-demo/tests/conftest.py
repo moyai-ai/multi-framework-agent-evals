@@ -94,10 +94,24 @@ def mock_agent_response():
     from agents import MessageOutputItem
     from unittest.mock import MagicMock
 
-    # Create a mock that will pass isinstance checks
+    # Create a mock content item with text attribute
+    mock_content_item = Mock()
+    mock_content_item.text = "Mocked agent response"
+    mock_content_item.type = "output_text"
+
+    # Create a mock raw_item (ResponseOutputMessage)
+    mock_raw_item = Mock()
+    mock_raw_item.content = [mock_content_item]
+    mock_raw_item.role = "assistant"
+    mock_raw_item.id = "test-msg-id"
+    mock_raw_item.status = "completed"
+    mock_raw_item.type = "message"
+
+    # Create a mock MessageOutputItem
     mock_message = MagicMock(spec=MessageOutputItem)
-    mock_message.content = "Mocked agent response"
+    mock_message.raw_item = mock_raw_item
     mock_message.type = "message_output_item"
+    mock_message.to_input_item = Mock(return_value={"role": "assistant", "content": "Mocked agent response"})
 
     mock_result = Mock()
     mock_result.new_items = [mock_message]
