@@ -1,0 +1,34 @@
+{
+  "name": "Umbrella Recommendation Scenario",
+  "description": "Test weather-based recommendations for bringing an umbrella",
+  "initial_context": {},
+  "conversation": [
+    {
+      "user": "Should I bring an umbrella in London today?",
+      "expected": {
+        "agent": "Weather Agent",
+        "tools_called": ["get_weather"],
+        "message_contains": ["London"]
+      }
+    },
+    {
+      "user": "What about clothing recommendations?",
+      "expected": {
+        "agent": "Weather Agent"
+      },
+      "skip_validation": true
+    },
+    {
+      "user": "Perfect, thanks!",
+      "expected": {
+        "agent": "Weather Agent"
+      },
+      "skip_validation": true
+    }
+  ],
+  "metadata": {
+    "test_type": "recommendations",
+    "priority": "high",
+    "estimated_duration": 25
+  }
+}

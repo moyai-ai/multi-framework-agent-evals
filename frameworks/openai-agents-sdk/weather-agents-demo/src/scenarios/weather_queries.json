@@ -1,0 +1,35 @@
+{
+  "name": "Basic Weather Queries",
+  "description": "Test basic weather queries for different cities",
+  "initial_context": {},
+  "conversation": [
+    {
+      "user": "What's the weather like in San Francisco?",
+      "expected": {
+        "agent": "Weather Agent",
+        "tools_called": ["get_weather"],
+        "message_contains": ["San Francisco", "°"]
+      }
+    },
+    {
+      "user": "How about New York?",
+      "expected": {
+        "agent": "Weather Agent",
+        "tools_called": ["get_weather"],
+        "message_contains": ["New York", "°"]
+      }
+    },
+    {
+      "user": "Thank you!",
+      "expected": {
+        "agent": "Weather Agent"
+      },
+      "skip_validation": true
+    }
+  ],
+  "metadata": {
+    "test_type": "basic_queries",
+    "priority": "high",
+    "estimated_duration": 20
+  }
+}

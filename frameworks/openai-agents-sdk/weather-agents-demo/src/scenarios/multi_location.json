@@ -1,0 +1,34 @@
+{
+  "name": "Multi-Location Weather Comparison",
+  "description": "Test comparing weather between multiple cities",
+  "initial_context": {},
+  "conversation": [
+    {
+      "user": "I'm planning a trip. Can you compare the weather in Paris and Tokyo?",
+      "expected": {
+        "agent": "Weather Agent",
+        "tools_called": ["compare_weather"],
+        "message_contains": ["Paris", "Tokyo"]
+      }
+    },
+    {
+      "user": "Which city has better weather right now?",
+      "expected": {
+        "agent": "Weather Agent"
+      },
+      "skip_validation": true
+    },
+    {
+      "user": "Great, that helps a lot!",
+      "expected": {
+        "agent": "Weather Agent"
+      },
+      "skip_validation": true
+    }
+  ],
+  "metadata": {
+    "test_type": "comparison",
+    "priority": "medium",
+    "estimated_duration": 30
+  }
+}
