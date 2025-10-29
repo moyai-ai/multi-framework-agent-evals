@@ -1,0 +1,9 @@
+.env
+.pytest_cache
+.venv
+.vscode
+.idea
+.pytest_cache
+uv.lock
+__pycache__
+.claude

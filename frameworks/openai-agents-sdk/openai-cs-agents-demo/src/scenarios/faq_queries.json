@@ -1,0 +1,62 @@
+{
+  "name": "FAQ Queries",
+  "description": "Test various FAQ interactions for baggage, wifi, and general policies",
+  "initial_context": {
+    "passenger_name": "Sarah Williams",
+    "account_number": "AC111222333444"
+  },
+  "conversation": [
+    {
+      "user": "Hi, I have some questions about baggage policies",
+      "expected": {
+        "agent": "FAQ Agent",
+        "handoffs": ["Triage Agent -> FAQ Agent"],
+        "message_contains": ["baggage", "help"]
+      }
+    },
+    {
+      "user": "What's the weight limit for checked bags?",
+      "expected": {
+        "agent": "FAQ Agent",
+        "tools_called": ["baggage_tool"],
+        "message_contains": ["50", "lbs", "weight"]
+      }
+    },
+    {
+      "user": "How much does it cost to check a second bag?",
+      "expected": {
+        "agent": "FAQ Agent",
+        "tools_called": ["baggage_tool"],
+        "message_contains": ["45", "second", "bag"]
+      }
+    },
+    {
+      "user": "Is wifi available on domestic flights?",
+      "expected": {
+        "agent": "FAQ Agent",
+        "tools_called": ["faq_lookup_tool"],
+        "message_contains": ["wifi", "available", "domestic"]
+      }
+    },
+    {
+      "user": "What about meal service on international flights?",
+      "expected": {
+        "agent": "FAQ Agent",
+        "tools_called": ["faq_lookup_tool"],
+        "message_contains": ["meal", "international", "complimentary"]
+      }
+    },
+    {
+      "user": "Perfect, that answers all my questions",
+      "expected": {
+        "agent": "FAQ Agent",
+        "message_contains": ["help", "assist"]
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "faq",
+    "priority": "medium",
+    "estimated_duration": 35
+  }
+}

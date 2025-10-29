@@ -1,0 +1,53 @@
+{
+  "name": "Flight Cancellation",
+  "description": "Test flight cancellation flow with confirmation and refund information",
+  "initial_context": {
+    "passenger_name": "Robert Davis",
+    "account_number": "AC555666777888"
+  },
+  "conversation": [
+    {
+      "user": "I need to cancel my flight",
+      "expected": {
+        "agent": "Cancellation Agent",
+        "handoffs": ["Triage Agent -> Cancellation Agent"],
+        "message_contains": ["cancel", "flight", "confirmation"]
+      }
+    },
+    {
+      "user": "My confirmation number is DEF456 and flight is DL789",
+      "expected": {
+        "agent": "Cancellation Agent",
+        "message_contains": ["confirm", "cancel", "DEF456", "DL789"]
+      }
+    },
+    {
+      "user": "Yes, I'm sure I want to cancel it",
+      "expected": {
+        "agent": "Cancellation Agent",
+        "tools_called": ["cancel_flight"],
+        "context_updates": ["last_action", "conversation_stage"],
+        "message_contains": ["cancelled", "refund", "confirmation"]
+      }
+    },
+    {
+      "user": "How long will the refund take?",
+      "expected": {
+        "agent": "Cancellation Agent",
+        "message_contains": ["refund", "days", "business"]
+      }
+    },
+    {
+      "user": "Thank you for your help",
+      "expected": {
+        "agent": "Cancellation Agent",
+        "message_contains": ["welcome"]
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "cancellation",
+    "priority": "high",
+    "estimated_duration": 30
+  }
+}

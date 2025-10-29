@@ -1,0 +1,54 @@
+{
+  "name": "Flight Status Inquiry",
+  "description": "Test flight status checking with handoff from triage to flight status agent",
+  "initial_context": {
+    "passenger_name": "Emily Johnson",
+    "account_number": "AC987654321098",
+    "flight_number": "UA456",
+    "confirmation_number": "XYZ789"
+  },
+  "conversation": [
+    {
+      "user": "Hello, I'd like to check the status of my flight",
+      "expected": {
+        "agent": "Flight Status Agent",
+        "handoffs": ["Triage Agent -> Flight Status Agent"],
+        "message_contains": ["flight", "status"]
+      }
+    },
+    {
+      "user": "My flight number is UA456",
+      "expected": {
+        "agent": "Flight Status Agent",
+        "tools_called": ["flight_status_tool"],
+        "message_contains": ["UA456", "departure", "gate"]
+      }
+    },
+    {
+      "user": "What gate should I go to?",
+      "expected": {
+        "agent": "Flight Status Agent",
+        "message_contains": ["gate"]
+      }
+    },
+    {
+      "user": "Is there any delay expected?",
+      "expected": {
+        "agent": "Flight Status Agent",
+        "message_contains": ["time", "schedule"]
+      }
+    },
+    {
+      "user": "Great, thanks for the information",
+      "expected": {
+        "agent": "Flight Status Agent",
+        "message_contains": ["welcome", "help"]
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "flight_status",
+    "priority": "high",
+    "estimated_duration": 25
+  }
+}

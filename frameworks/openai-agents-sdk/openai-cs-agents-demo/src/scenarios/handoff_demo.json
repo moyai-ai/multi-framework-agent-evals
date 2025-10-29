@@ -1,0 +1,74 @@
+{
+  "name": "Multi-Agent Handoff Demo",
+  "description": "Complex scenario demonstrating multiple handoffs between different agents",
+  "initial_context": {
+    "passenger_name": "Michael Brown",
+    "account_number": "AC999888777666"
+  },
+  "conversation": [
+    {
+      "user": "Hello, I need help with several things for my upcoming trip",
+      "expected": {
+        "agent": "Triage Agent",
+        "message_contains": ["help", "assist"]
+      }
+    },
+    {
+      "user": "First, I want to check if my flight AA123 is on time",
+      "expected": {
+        "agent": "Flight Status Agent",
+        "handoffs": ["Triage Agent -> Flight Status Agent"],
+        "tools_called": ["flight_status_tool"],
+        "message_contains": ["AA123", "status"]
+      }
+    },
+    {
+      "user": "Great! Now I need to change my seat",
+      "expected": {
+        "agent": "Seat Booking Agent",
+        "handoffs": ["Flight Status Agent -> Triage Agent", "Triage Agent -> Seat Booking Agent"],
+        "message_contains": ["seat", "change"]
+      }
+    },
+    {
+      "user": "I'd like seat 15C for confirmation GHI789",
+      "expected": {
+        "agent": "Seat Booking Agent",
+        "tools_called": ["update_seat"],
+        "context_updates": ["seat_number"],
+        "message_contains": ["15C", "updated", "confirmed"]
+      }
+    },
+    {
+      "user": "One more thing - what's the baggage allowance for international flights?",
+      "expected": {
+        "agent": "FAQ Agent",
+        "handoffs": ["Seat Booking Agent -> Triage Agent", "Triage Agent -> FAQ Agent"],
+        "tools_called": ["baggage_tool"],
+        "message_contains": ["international", "baggage", "free"]
+      }
+    },
+    {
+      "user": "Actually, I might need to cancel a different flight. Can you help with that?",
+      "expected": {
+        "agent": "Cancellation Agent",
+        "handoffs": ["FAQ Agent -> Triage Agent", "Triage Agent -> Cancellation Agent"],
+        "message_contains": ["cancel", "flight"]
+      }
+    },
+    {
+      "user": "Never mind about the cancellation. I'll keep the flight. Thanks for all your help!",
+      "expected": {
+        "agent": "Cancellation Agent",
+        "message_contains": ["help", "assist"]
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "handoff_demo",
+    "priority": "high",
+    "estimated_duration": 60,
+    "complexity": "high",
+    "agents_involved": ["Triage Agent", "Flight Status Agent", "Seat Booking Agent", "FAQ Agent", "Cancellation Agent"]
+  }
+}

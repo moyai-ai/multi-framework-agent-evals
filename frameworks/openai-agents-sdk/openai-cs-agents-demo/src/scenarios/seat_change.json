@@ -1,0 +1,54 @@
+{
+  "name": "Seat Change Scenario",
+  "description": "Test complete seat change flow with handoff from triage to seat booking agent",
+  "initial_context": {
+    "passenger_name": "John Smith",
+    "account_number": "AC123456789012"
+  },
+  "conversation": [
+    {
+      "user": "Hi, I need to change my seat on my upcoming flight",
+      "expected": {
+        "agent": "Seat Booking Agent",
+        "handoffs": ["Triage Agent -> Seat Booking Agent"],
+        "message_contains": ["seat", "confirmation"]
+      }
+    },
+    {
+      "user": "My confirmation number is ABC123",
+      "expected": {
+        "agent": "Seat Booking Agent",
+        "message_contains": ["seat"]
+      }
+    },
+    {
+      "user": "Can you show me the seat map?",
+      "expected": {
+        "agent": "Seat Booking Agent",
+        "tools_called": ["display_seat_map"],
+        "message_contains": ["seat map", "select"]
+      }
+    },
+    {
+      "user": "I'd like seat 23A please",
+      "expected": {
+        "agent": "Seat Booking Agent",
+        "tools_called": ["update_seat"],
+        "context_updates": ["seat_number"],
+        "message_contains": ["23A", "confirmed", "successfully"]
+      }
+    },
+    {
+      "user": "Thank you! That's all I needed",
+      "expected": {
+        "agent": "Seat Booking Agent",
+        "message_contains": ["welcome", "help", "assist"]
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "seat_change",
+    "priority": "high",
+    "estimated_duration": 30
+  }
+}
