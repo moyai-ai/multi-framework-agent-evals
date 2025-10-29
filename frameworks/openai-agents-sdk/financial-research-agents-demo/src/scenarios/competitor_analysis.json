@@ -1,0 +1,28 @@
+{
+  "name": "Competitor Analysis - Tesla vs Rivian",
+  "description": "Comparative analysis of Tesla and Rivian in the EV market",
+  "query": "Compare Tesla and Rivian competitive positioning in electric vehicles",
+  "expectations": {
+    "min_search_terms": 3,
+    "required_sections": [
+      "Executive Summary",
+      "Financial Performance",
+      "Market Position",
+      "Conclusion"
+    ],
+    "verification_should_pass": true,
+    "min_report_length": 500,
+    "required_keywords": [
+      "Tesla",
+      "electric vehicle",
+      "competition",
+      "market"
+    ]
+  },
+  "metadata": {
+    "test_type": "competitor_analysis",
+    "priority": "medium",
+    "estimated_duration": 60,
+    "tags": ["competitors", "EV", "automotive", "Tesla"]
+  }
+}
