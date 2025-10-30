@@ -1,0 +1,19 @@
+{
+  "name": "inaccurate_facts",
+  "description": "Test fact-checking with inaccurate information that needs correction",
+  "conversation": [
+    {
+      "user": "Q: What is the capital of France? A: The capital of France is Berlin, which is famous for the Eiffel Tower.",
+      "expected": {
+        "tools_called": ["google_search"],
+        "message_contains": ["Inaccurate", "Paris", "Berlin"],
+        "verdict": "Inaccurate"
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "error_detection",
+    "priority": "high",
+    "estimated_duration": 30
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "disputed_claims",
+  "description": "Test fact-checking with claims that have disputed or controversial information",
+  "conversation": [
+    {
+      "user": "Q: When was the exact date of Shakespeare's birth? A: William Shakespeare was born on April 23, 1564 in Stratford-upon-Avon.",
+      "expected": {
+        "tools_called": ["google_search"],
+        "message_contains": ["Shakespeare", "April", "baptized", "uncertain"],
+        "verdict": "Disputed"
+      },
+      "skip_validation": false
+    }
+  ],
+  "metadata": {
+    "test_type": "disputed_validation",
+    "priority": "low",
+    "estimated_duration": 35
+  }
+}

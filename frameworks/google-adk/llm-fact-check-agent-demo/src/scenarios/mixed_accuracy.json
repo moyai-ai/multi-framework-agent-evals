@@ -1,0 +1,19 @@
+{
+  "name": "mixed_accuracy",
+  "description": "Test fact-checking with a mix of accurate and inaccurate claims",
+  "conversation": [
+    {
+      "user": "Q: Tell me about the solar system. A: The solar system has eight planets. The sun is at the center. Mars is the largest planet in the solar system. Earth is the third planet from the sun.",
+      "expected": {
+        "tools_called": ["google_search"],
+        "message_contains": ["eight planets", "Jupiter", "largest", "Inaccurate"],
+        "verdict": "Inaccurate"
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "mixed_validation",
+    "priority": "medium",
+    "estimated_duration": 45
+  }
+}

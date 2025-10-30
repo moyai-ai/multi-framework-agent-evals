@@ -1,0 +1,19 @@
+{
+  "name": "accurate_facts",
+  "description": "Test fact-checking with completely accurate information",
+  "conversation": [
+    {
+      "user": "Q: Who was the first president of the United States? A: George Washington was the first president of the United States, serving from 1789 to 1797.",
+      "expected": {
+        "tools_called": ["google_search"],
+        "message_contains": ["Accurate", "George Washington", "first president"],
+        "verdict": "Accurate"
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "accuracy_validation",
+    "priority": "high",
+    "estimated_duration": 30
+  }
+}
