@@ -1,0 +1,43 @@
+{
+  "scenarios": [
+    {
+      "name": "Python Import Error",
+      "description": "Test handling of Python import errors",
+      "error_message": "ImportError: No module named 'pandas'",
+      "programming_language": "python",
+      "conversation": [
+        {
+          "user_input": "ImportError: No module named 'pandas'",
+          "expected_tools": [
+            "search_stack_exchange_for_error"
+          ],
+          "expected_keywords": [
+            "pip install",
+            "pandas"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "JavaScript TypeError",
+      "description": "Test handling of JavaScript type errors",
+      "error_message": "TypeError: Cannot read property 'map' of undefined",
+      "programming_language": "javascript",
+      "framework": "react",
+      "conversation": [
+        {
+          "user_input": "TypeError: Cannot read property 'map' of undefined in React",
+          "expected_tools": [
+            "search_stack_exchange_for_error",
+            "analyze_error_and_suggest_fix"
+          ],
+          "expected_keywords": [
+            "undefined",
+            "map",
+            "array"
+          ]
+        }
+      ]
+    }
+  ]
+}
