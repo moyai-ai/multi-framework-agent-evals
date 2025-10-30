@@ -1,0 +1,51 @@
+{
+  "name": "user_analysis",
+  "description": "Test user profile and activity analysis",
+  "conversation": [
+    {
+      "user": "Analyze the Hacker News user 'pg' (Paul Graham)",
+      "expected": {
+        "agent": "user_agent",
+        "tools_called": ["analyze_user"],
+        "parameters": {
+          "username": "pg"
+        },
+        "output_structure": {
+          "query_type": "user",
+          "username": "pg",
+          "profile": "object",
+          "top_stories": "array",
+          "activity_summary": "object"
+        }
+      }
+    },
+    {
+      "user": "What can you tell me about the user 'dang' on Hacker News?",
+      "expected": {
+        "agent": "user_agent",
+        "tools_called": ["analyze_user"],
+        "parameters": {
+          "username": "dang"
+        },
+        "message_contains": ["karma", "submissions", "activity"]
+      }
+    },
+    {
+      "user": "Show me the profile for user 'sama' without their submissions",
+      "expected": {
+        "agent": "user_agent",
+        "tools_called": ["analyze_user"],
+        "parameters": {
+          "username": "sama",
+          "include_submissions": false
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "user_analytics",
+    "priority": "medium",
+    "estimated_duration": 40,
+    "tags": ["users", "profiles", "karma", "activity"]
+  }
+}

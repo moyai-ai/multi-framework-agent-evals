@@ -1,0 +1,42 @@
+{
+  "name": "trending",
+  "description": "Test trending story analysis from Hacker News",
+  "conversation": [
+    {
+      "user": "What are the top trending stories on Hacker News today?",
+      "expected": {
+        "agent": "trending_agent",
+        "tools_called": ["get_trending_stories"],
+        "message_contains": ["trending", "velocity", "points"],
+        "output_structure": {
+          "query_type": "trending",
+          "time_window": "24h",
+          "results": "array",
+          "trending_keywords": "array",
+          "metadata": "object"
+        }
+      }
+    },
+    {
+      "user": "Show me the trending stories from the past week with at least 100 points",
+      "expected": {
+        "agent": "trending_agent",
+        "tools_called": ["get_trending_stories"],
+        "parameters": {
+          "time_window": "7d",
+          "min_score": 100
+        },
+        "output_structure": {
+          "query_type": "trending",
+          "time_window": "7d"
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "trending_analysis",
+    "priority": "high",
+    "estimated_duration": 30,
+    "tags": ["trending", "velocity", "ranking"]
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "name": "comment_sentiment",
+  "description": "Test comment thread analysis and sentiment detection",
+  "conversation": [
+    {
+      "user": "Analyze the comments for HN story ID 38823431",
+      "expected": {
+        "agent": "comment_agent",
+        "tools_called": ["analyze_story_comments"],
+        "parameters": {
+          "story_id": "38823431"
+        },
+        "output_structure": {
+          "query_type": "comments",
+          "story_id": "38823431",
+          "analysis": {
+            "total_comments": "number",
+            "unique_commenters": "number",
+            "sentiment": "object",
+            "top_themes": "array"
+          }
+        }
+      }
+    },
+    {
+      "user": "What's the sentiment in the discussion thread for story 38800000?",
+      "expected": {
+        "agent": "comment_agent",
+        "tools_called": ["analyze_story_comments"],
+        "parameters": {
+          "story_id": "38800000"
+        },
+        "message_contains": ["sentiment", "positive", "negative", "neutral"]
+      }
+    },
+    {
+      "user": "Show me the top 20 comments and themes for story 38750000",
+      "expected": {
+        "agent": "comment_agent",
+        "tools_called": ["analyze_story_comments"],
+        "parameters": {
+          "story_id": "38750000",
+          "max_comments": 20
+        },
+        "message_contains": ["themes", "comments", "discussion"]
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "comment_analysis",
+    "priority": "medium",
+    "estimated_duration": 50,
+    "tags": ["comments", "sentiment", "discussion", "themes"]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "name": "search_keywords",
+  "description": "Test keyword search functionality",
+  "conversation": [
+    {
+      "user": "Search for stories about artificial intelligence on Hacker News",
+      "expected": {
+        "agent": "search_agent",
+        "tools_called": ["search_hacker_news"],
+        "parameters": {
+          "query": "artificial intelligence",
+          "search_type": "story"
+        },
+        "output_structure": {
+          "query_type": "search",
+          "search_query": "string",
+          "results": "array",
+          "metadata": "object"
+        }
+      }
+    },
+    {
+      "user": "Find discussions about Python programming",
+      "expected": {
+        "agent": "search_agent",
+        "tools_called": ["search_hacker_news"],
+        "message_contains": ["Python", "programming"],
+        "output_structure": {
+          "query_type": "search",
+          "results": "array"
+        }
+      }
+    },
+    {
+      "user": "Look for comments about startup funding",
+      "expected": {
+        "agent": "search_agent",
+        "tools_called": ["search_hacker_news"],
+        "parameters": {
+          "search_type": "comment"
+        },
+        "message_contains": ["startup", "funding", "comment"]
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "search_functionality",
+    "priority": "high",
+    "estimated_duration": 45,
+    "tags": ["search", "keywords", "filtering"]
+  }
+}
