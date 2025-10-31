@@ -1,0 +1,28 @@
+{
+  "scenario": {
+    "id": "analysis_1",
+    "name": "Customer Behavior Pattern",
+    "description": "Analyze customer purchasing patterns",
+    "request": "Analyze the purchasing patterns of repeat customers - what categories do they buy most?",
+    "expected_tables": [
+      "customers",
+      "orders",
+      "order_items",
+      "products"
+    ],
+    "expected_query_type": "analysis",
+    "validation": {
+      "should_contain": [
+        "category",
+        "customer"
+      ],
+      "provides_insights": true
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

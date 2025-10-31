@@ -1,0 +1,20 @@
+{
+  "scenario": {
+    "id": "error_handling_2",
+    "name": "Ambiguous Request",
+    "description": "Test handling of ambiguous requests",
+    "request": "Show me the best ones",
+    "requires_clarification": true,
+    "clarification_options": [
+      "best products",
+      "best customers",
+      "best orders"
+    ]
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "scenario": {
+    "id": "join_query_1",
+    "name": "Orders with Customer Info",
+    "description": "Join orders with customer information",
+    "request": "Show me all orders with customer names and email addresses",
+    "expected_tables": [
+      "orders",
+      "customers"
+    ],
+    "expected_query_type": "join",
+    "validation": {
+      "should_contain": [
+        "order_date",
+        "name",
+        "email"
+      ],
+      "min_rows": 10
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

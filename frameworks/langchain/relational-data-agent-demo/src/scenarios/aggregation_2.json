@@ -1,0 +1,27 @@
+{
+  "scenario": {
+    "id": "aggregation_2",
+    "name": "Customer Order Statistics",
+    "description": "Calculate statistics per customer",
+    "request": "Show me the total number of orders and total spent for each customer",
+    "expected_tables": [
+      "orders",
+      "customers"
+    ],
+    "expected_query_type": "aggregation",
+    "validation": {
+      "should_contain": [
+        "COUNT",
+        "SUM",
+        "GROUP BY"
+      ],
+      "min_rows": 5
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

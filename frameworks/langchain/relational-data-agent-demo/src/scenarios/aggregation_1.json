@@ -1,0 +1,26 @@
+{
+  "scenario": {
+    "id": "aggregation_1",
+    "name": "Total Sales by Product",
+    "description": "Aggregate sales data by product",
+    "request": "What are the total sales amounts for each product?",
+    "expected_tables": [
+      "order_items",
+      "products"
+    ],
+    "expected_query_type": "aggregation",
+    "validation": {
+      "should_contain": [
+        "SUM",
+        "GROUP BY"
+      ],
+      "min_rows": 5
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

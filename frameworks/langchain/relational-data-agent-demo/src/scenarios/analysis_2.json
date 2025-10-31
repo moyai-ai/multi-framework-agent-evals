@@ -1,0 +1,28 @@
+{
+  "scenario": {
+    "id": "analysis_2",
+    "name": "Product Performance",
+    "description": "Comprehensive product performance analysis",
+    "request": "Provide a performance analysis of all products including sales volume, revenue, and stock turnover",
+    "expected_tables": [
+      "products",
+      "order_items",
+      "inventory_logs"
+    ],
+    "expected_query_type": "analysis",
+    "validation": {
+      "should_contain": [
+        "revenue",
+        "volume"
+      ],
+      "provides_insights": true,
+      "includes_visualization": true
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

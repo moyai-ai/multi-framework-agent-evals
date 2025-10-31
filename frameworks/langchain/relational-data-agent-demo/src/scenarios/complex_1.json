@@ -1,0 +1,26 @@
+{
+  "scenario": {
+    "id": "complex_1",
+    "name": "Top Customers Analysis",
+    "description": "Complex analysis of top customers",
+    "request": "Who are the top 5 customers by total purchase amount and how many orders have they placed?",
+    "expected_tables": [
+      "customers",
+      "orders"
+    ],
+    "expected_query_type": "complex",
+    "validation": {
+      "should_contain": [
+        "ORDER BY",
+        "LIMIT"
+      ],
+      "row_count": 5
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

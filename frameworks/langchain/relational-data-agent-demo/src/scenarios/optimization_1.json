@@ -1,0 +1,20 @@
+{
+  "scenario": {
+    "id": "optimization_1",
+    "name": "Query Optimization Suggestion",
+    "description": "Test query optimization capabilities",
+    "request": "Show me customers who have never placed an order",
+    "expected_tables": [
+      "customers",
+      "orders"
+    ],
+    "should_optimize": true,
+    "optimization_hint": "LEFT JOIN with NULL check"
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

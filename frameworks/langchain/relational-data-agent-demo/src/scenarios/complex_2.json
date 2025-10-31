@@ -1,0 +1,27 @@
+{
+  "scenario": {
+    "id": "complex_2",
+    "name": "Inventory Analysis",
+    "description": "Analyze current inventory levels and sales",
+    "request": "Which products have low stock (less than 50 units) and high sales (more than 5 units sold)?",
+    "expected_tables": [
+      "products",
+      "order_items",
+      "inventory_logs"
+    ],
+    "expected_query_type": "complex",
+    "validation": {
+      "should_contain": [
+        "stock_quantity",
+        "WHERE"
+      ],
+      "min_rows": 1
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

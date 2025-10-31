@@ -1,0 +1,27 @@
+{
+  "scenario": {
+    "id": "join_query_2",
+    "name": "Order Details with Products",
+    "description": "Complex join showing order items with product details",
+    "request": "Show me the details of order ID 1 including product names and quantities",
+    "expected_tables": [
+      "orders",
+      "order_items",
+      "products"
+    ],
+    "expected_query_type": "join",
+    "validation": {
+      "should_contain": [
+        "Laptop Pro 15",
+        "Wireless Mouse"
+      ],
+      "row_count": 3
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

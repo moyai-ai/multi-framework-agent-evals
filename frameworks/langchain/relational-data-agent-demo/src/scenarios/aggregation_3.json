@@ -1,0 +1,25 @@
+{
+  "scenario": {
+    "id": "aggregation_3",
+    "name": "Monthly Sales Trend",
+    "description": "Analyze sales trends by month",
+    "request": "Show me the total sales by month for 2024",
+    "expected_tables": [
+      "orders"
+    ],
+    "expected_query_type": "aggregation",
+    "validation": {
+      "should_contain": [
+        "2024",
+        "GROUP BY"
+      ],
+      "min_rows": 3
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

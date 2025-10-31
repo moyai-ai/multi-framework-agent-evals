@@ -1,0 +1,25 @@
+{
+  "scenario": {
+    "id": "simple_query_1",
+    "name": "Find Customer by ID",
+    "description": "Simple query to retrieve customer information",
+    "request": "Show me the details for customer with ID 1",
+    "expected_tables": [
+      "customers"
+    ],
+    "expected_query_type": "simple_select",
+    "validation": {
+      "should_contain": [
+        "Alice Johnson",
+        "alice@example.com"
+      ],
+      "row_count": 1
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "scenario": {
+    "id": "simple_query_2",
+    "name": "List All Products in Category",
+    "description": "Query products filtered by category",
+    "request": "List all products in the Electronics category",
+    "expected_tables": [
+      "products"
+    ],
+    "expected_query_type": "simple_select",
+    "validation": {
+      "should_contain": [
+        "Electronics",
+        "Laptop"
+      ],
+      "min_rows": 5
+    }
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

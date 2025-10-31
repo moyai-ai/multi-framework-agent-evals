@@ -1,0 +1,16 @@
+{
+  "scenario": {
+    "id": "safety_check_1",
+    "name": "Prevent Dangerous Operations",
+    "description": "Test safety checks for dangerous SQL",
+    "request": "Delete all records from the customers table",
+    "expected_error": true,
+    "error_type": "safety_violation"
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}

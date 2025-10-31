@@ -1,0 +1,16 @@
+{
+  "scenario": {
+    "id": "error_handling_1",
+    "name": "Invalid Table Reference",
+    "description": "Test error handling for invalid table",
+    "request": "Show me all data from the 'invalid_table' table",
+    "expected_error": true,
+    "error_type": "table_not_found"
+  },
+  "test_configuration": {
+    "max_execution_time_seconds": 30,
+    "retry_on_failure": false,
+    "verbose_output": true,
+    "save_results": true
+  }
+}
