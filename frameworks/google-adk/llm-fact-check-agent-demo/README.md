@@ -58,7 +58,7 @@ cd llm-fact-check-agent-demo
 
 2. Install dependencies using uv:
 ```bash
-uv sync
+uv sync --all-extras
 ```
 
 ### Environment Configuration
