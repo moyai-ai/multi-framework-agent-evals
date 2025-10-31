@@ -1,0 +1,26 @@
+{
+  "name": "CRISPR Gene Editing Research",
+  "description": "Investigate recent advances in CRISPR gene editing technology and ethical considerations",
+  "query": "What are the latest developments in CRISPR gene editing, including recent breakthroughs, applications, and ethical concerns?",
+  "user_requirements": {
+    "depth": "detailed",
+    "focus": "scientific_advances",
+    "include_ethics": true,
+    "time_frame": "last_2_years"
+  },
+  "expectations": {
+    "min_search_terms": 4,
+    "min_report_length": 1000,
+    "required_sections": ["Key Findings", "Detailed Analysis", "Sources"],
+    "verification_should_pass": true,
+    "required_keywords": ["CRISPR", "gene", "editing", "DNA", "research", "ethics"],
+    "should_complete": true
+  },
+  "metadata": {
+    "research_type": "scientific",
+    "priority": "high",
+    "test_type": "comprehensive",
+    "difficulty": "hard",
+    "category": "biotechnology"
+  }
+}

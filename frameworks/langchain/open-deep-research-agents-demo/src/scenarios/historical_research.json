@@ -1,0 +1,27 @@
+{
+  "name": "Space Race Historical Analysis",
+  "description": "Research the historical space race between the US and USSR, its impact, and modern parallels",
+  "query": "Analyze the historical space race between the United States and Soviet Union, including key milestones, technological advances, societal impact, and how it compares to today's commercial space competition",
+  "user_requirements": {
+    "depth": "detailed",
+    "focus": "historical_analysis",
+    "include_timeline": true,
+    "include_modern_comparison": true,
+    "time_period": "1955-1975"
+  },
+  "expectations": {
+    "min_search_terms": 3,
+    "min_report_length": 700,
+    "required_sections": ["Introduction", "Key Findings", "Detailed Analysis"],
+    "verification_should_pass": true,
+    "required_keywords": ["space", "race", "NASA", "Soviet", "Apollo", "technology"],
+    "should_complete": true
+  },
+  "metadata": {
+    "research_type": "historical",
+    "priority": "medium",
+    "test_type": "historical_analysis",
+    "difficulty": "medium",
+    "category": "history"
+  }
+}

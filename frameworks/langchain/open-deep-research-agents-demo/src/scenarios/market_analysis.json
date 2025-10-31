@@ -1,0 +1,27 @@
+{
+  "name": "Electric Vehicle Market Analysis",
+  "description": "Analyze the current electric vehicle market, trends, and future projections",
+  "query": "Analyze the global electric vehicle market including current market size, key players, growth trends, challenges, and future projections for the next 5 years",
+  "user_requirements": {
+    "depth": "comprehensive",
+    "focus": "market_dynamics",
+    "geographic_scope": "global",
+    "include_projections": true,
+    "include_challenges": true
+  },
+  "expectations": {
+    "min_search_terms": 4,
+    "min_report_length": 900,
+    "required_sections": ["Executive Summary", "Key Findings", "Detailed Analysis"],
+    "verification_should_pass": true,
+    "required_keywords": ["electric", "vehicle", "market", "growth", "trends", "forecast"],
+    "should_complete": true
+  },
+  "metadata": {
+    "research_type": "market",
+    "priority": "high",
+    "test_type": "market_analysis",
+    "difficulty": "medium",
+    "category": "automotive"
+  }
+}

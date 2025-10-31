@@ -1,0 +1,27 @@
+{
+  "name": "AI Frameworks Comparison",
+  "description": "Compare and contrast major AI/ML frameworks for deep learning applications",
+  "query": "Compare TensorFlow, PyTorch, and JAX frameworks for deep learning, including their strengths, weaknesses, use cases, performance benchmarks, and community support",
+  "user_requirements": {
+    "depth": "comprehensive",
+    "focus": "technical_comparison",
+    "include_benchmarks": true,
+    "include_use_cases": true,
+    "include_community": true
+  },
+  "expectations": {
+    "min_search_terms": 5,
+    "min_report_length": 1000,
+    "required_sections": ["Executive Summary", "Key Findings", "Detailed Analysis", "Sources"],
+    "verification_should_pass": true,
+    "required_keywords": ["TensorFlow", "PyTorch", "JAX", "comparison", "framework", "deep learning"],
+    "should_complete": true
+  },
+  "metadata": {
+    "research_type": "comparative",
+    "priority": "high",
+    "test_type": "comparative_analysis",
+    "difficulty": "hard",
+    "category": "artificial_intelligence"
+  }
+}

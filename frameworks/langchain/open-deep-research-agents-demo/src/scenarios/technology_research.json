@@ -1,0 +1,25 @@
+{
+  "name": "Quantum Computing Research",
+  "description": "Research the latest developments and applications in quantum computing technology",
+  "query": "What are the latest breakthroughs in quantum computing and their potential real-world applications?",
+  "user_requirements": {
+    "depth": "comprehensive",
+    "focus": "recent_developments",
+    "include_applications": true
+  },
+  "expectations": {
+    "min_search_terms": 3,
+    "min_report_length": 800,
+    "required_sections": ["Executive Summary", "Key Findings", "Sources"],
+    "verification_should_pass": true,
+    "required_keywords": ["quantum", "computing", "qubit", "applications", "technology"],
+    "should_complete": true
+  },
+  "metadata": {
+    "research_type": "technical",
+    "priority": "high",
+    "test_type": "comprehensive",
+    "difficulty": "medium",
+    "category": "technology"
+  }
+}
