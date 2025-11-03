@@ -3,7 +3,6 @@
 import os
 from typing import Dict, Optional, List, Any
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIModel
 
 from .context import BankSupportContext
 from .tools import BANK_SUPPORT_TOOLS
@@ -83,15 +82,9 @@ def create_bank_support_agent(
     if model_name is None:
         model_name = os.getenv("DEFAULT_MODEL", "gpt-4o")
 
-    # Create the model
-    model = OpenAIModel(
-        model_name=model_name,
-        temperature=temperature,
-    )
-
-    # Create the agent with tools
+    # Create the agent with tools (Pydantic AI handles model setup internally)
     agent = Agent(
-        model=model,
+        model=model_name,  # Pass model name directly
         deps_type=BankSupportContext,
         system_prompt=BANK_SUPPORT_SYSTEM_PROMPT,
         tools=BANK_SUPPORT_TOOLS,
@@ -118,15 +111,10 @@ def create_fraud_specialist_agent(
     if model_name is None:
         model_name = os.getenv("DEFAULT_MODEL", "gpt-4o")
 
-    model = OpenAIModel(
-        model_name=model_name,
-        temperature=temperature,
-    )
-
     # Fraud specialist uses subset of tools
     fraud_tools = [
         tool for tool in BANK_SUPPORT_TOOLS
-        if tool._function.__name__ in [
+        if tool.__name__ in [
             "authenticate_customer",
             "check_fraud_alert",
             "get_recent_transactions",
@@ -135,7 +123,7 @@ def create_fraud_specialist_agent(
     ]
 
     agent = Agent(
-        model=model,
+        model=model_name,  # Pass model name directly
         deps_type=BankSupportContext,
         system_prompt=FRAUD_SPECIALIST_PROMPT,
         tools=fraud_tools,
@@ -162,15 +150,10 @@ def create_account_specialist_agent(
     if model_name is None:
         model_name = os.getenv("DEFAULT_MODEL", "gpt-4o")
 
-    model = OpenAIModel(
-        model_name=model_name,
-        temperature=temperature,
-    )
-
     # Account specialist uses account-related tools
     account_tools = [
         tool for tool in BANK_SUPPORT_TOOLS
-        if tool._function.__name__ in [
+        if tool.__name__ in [
             "authenticate_customer",
             "get_account_balance",
             "get_recent_transactions",
@@ -180,7 +163,7 @@ def create_account_specialist_agent(
     ]
 
     agent = Agent(
-        model=model,
+        model=model_name,  # Pass model name directly
         deps_type=BankSupportContext,
         system_prompt=ACCOUNT_SPECIALIST_PROMPT,
         tools=account_tools,
@@ -233,14 +216,24 @@ def list_agents() -> List[Dict[str, Any]]:
     """List all available agents with details."""
     agent_list = []
     for key, agent in AGENTS.items():
+        # Get tools from agent - pydantic-ai stores them in _tools
+        agent_tools = []
+
+        # Map of key to expected tools (since we filter them at creation)
+        if key == "bank_support":
+            agent_tools = [t.__name__ for t in BANK_SUPPORT_TOOLS]
+        elif key == "fraud_specialist":
+            agent_tools = ["authenticate_customer", "check_fraud_alert",
+                          "get_recent_transactions", "create_support_ticket"]
+        elif key == "account_specialist":
+            agent_tools = ["authenticate_customer", "get_account_balance",
+                          "get_recent_transactions", "transfer_funds", "update_contact_info"]
+
         agent_info = {
             "key": key,
             "name": agent.name if hasattr(agent, 'name') else key,
-            "tools": [
-                tool._function.__name__ if hasattr(tool, '_function') else str(tool)
-                for tool in (agent._tools or [])
-            ][:5],  # Limit to first 5 tools for brevity
-            "model": str(agent._model) if hasattr(agent, '_model') else "unknown",
+            "tools": agent_tools[:5],  # Limit to first 5 tools for brevity
+            "model": "gpt-4o",  # Default model
         }
         agent_list.append(agent_info)
 

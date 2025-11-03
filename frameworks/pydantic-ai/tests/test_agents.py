@@ -22,7 +22,7 @@ class TestAgentCreation:
         agent = create_bank_support_agent()
         assert agent is not None
         assert agent.name == "Bank Support Agent"
-        assert len(agent._tools) > 0
+        assert hasattr(agent, 'tools') and len(agent.tools or []) > 0
 
     def test_create_fraud_specialist_agent(self):
         """Test creating fraud specialist agent."""
@@ -30,14 +30,16 @@ class TestAgentCreation:
         assert agent is not None
         assert agent.name == "Fraud Specialist Agent"
         # Fraud specialist has fewer tools
-        assert len(agent._tools) < len(create_bank_support_agent()._tools)
+        bank_support = create_bank_support_agent()
+        assert hasattr(agent, 'tools') and hasattr(bank_support, 'tools')
+        assert len(agent.tools or []) < len(bank_support.tools or [])
 
     def test_create_account_specialist_agent(self):
         """Test creating account specialist agent."""
         agent = create_account_specialist_agent()
         assert agent is not None
         assert agent.name == "Account Specialist Agent"
-        assert len(agent._tools) > 0
+        assert hasattr(agent, 'tools') and len(agent.tools or []) > 0
 
     def test_agent_with_custom_model(self):
         """Test creating agent with custom model."""
@@ -154,7 +156,9 @@ class TestAgentTools:
     def test_bank_support_agent_tools(self):
         """Test bank support agent has all tools."""
         agent = AGENTS["bank_support"]
-        tool_names = [t._function.__name__ for t in agent._tools]
+        tool_names = []
+        if hasattr(agent, 'tools'):
+            tool_names = [t.__name__ for t in agent.tools if hasattr(t, '__name__')]
 
         expected_tools = [
             "authenticate_customer",
@@ -172,7 +176,9 @@ class TestAgentTools:
     def test_fraud_specialist_tools(self):
         """Test fraud specialist has specific tools."""
         agent = AGENTS["fraud_specialist"]
-        tool_names = [t._function.__name__ for t in agent._tools]
+        tool_names = []
+        if hasattr(agent, 'tools'):
+            tool_names = [t.__name__ for t in agent.tools if hasattr(t, '__name__')]
 
         # Should have fraud-related tools
         assert "check_fraud_alert" in tool_names
@@ -186,7 +192,9 @@ class TestAgentTools:
     def test_account_specialist_tools(self):
         """Test account specialist has account tools."""
         agent = AGENTS["account_specialist"]
-        tool_names = [t._function.__name__ for t in agent._tools]
+        tool_names = []
+        if hasattr(agent, 'tools'):
+            tool_names = [t.__name__ for t in agent.tools if hasattr(t, '__name__')]
 
         # Should have account-related tools
         assert "get_account_balance" in tool_names

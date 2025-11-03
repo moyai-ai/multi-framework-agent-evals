@@ -27,7 +27,7 @@ class TestToolRegistry:
     def test_bank_support_tools_list(self):
         """Test BANK_SUPPORT_TOOLS contains all tools."""
         assert len(BANK_SUPPORT_TOOLS) == 7
-        tool_names = [t._function.__name__ for t in BANK_SUPPORT_TOOLS]
+        tool_names = [t.__name__ for t in BANK_SUPPORT_TOOLS]
 
         expected = [
             "authenticate_customer",

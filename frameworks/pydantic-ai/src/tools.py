@@ -9,7 +9,6 @@ from pathlib import Path
 import os
 
 from pydantic_ai import RunContext
-from pydantic_ai.tools import Tool
 
 from .context import (
     BankSupportContext,
@@ -515,17 +514,17 @@ async def update_contact_info(
 
 # Export tools as a list for the agent
 BANK_SUPPORT_TOOLS = [
-    Tool.from_function(authenticate_customer),
-    Tool.from_function(get_account_balance),
-    Tool.from_function(get_recent_transactions),
-    Tool.from_function(transfer_funds),
-    Tool.from_function(create_support_ticket),
-    Tool.from_function(check_fraud_alert),
-    Tool.from_function(update_contact_info),
+    authenticate_customer,
+    get_account_balance,
+    get_recent_transactions,
+    transfer_funds,
+    create_support_ticket,
+    check_fraud_alert,
+    update_contact_info,
 ]
 
 
-def get_all_tools() -> List[Tool]:
+def get_all_tools() -> List:
     """Get all available tools."""
     return BANK_SUPPORT_TOOLS
 
@@ -534,9 +533,9 @@ def get_tool_descriptions() -> List[Dict[str, str]]:
     """Get descriptions of all available tools."""
     return [
         {
-            "name": tool._function.__name__,
-            "description": tool._function.__doc__.split("\n")[1].strip()
-            if tool._function.__doc__ else "No description"
+            "name": tool.__name__,
+            "description": tool.__doc__.split("\n")[1].strip()
+            if tool.__doc__ else "No description"
         }
         for tool in BANK_SUPPORT_TOOLS
     ]

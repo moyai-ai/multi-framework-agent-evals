@@ -48,27 +48,17 @@ User Request → Agent Selection → Tool Execution → Context Update → Respo
 
 ### Setup
 
-1. Clone the repository and navigate to the pydantic-ai directory:
-```bash
-cd frameworks/pydantic-ai
-```
-
-2. Install dependencies using uv:
+1. Install dependencies using uv:
 ```bash
 uv sync --dev
 ```
 
-3. Create a `.env` file from the example:
-```bash
-cp .env.example .env
-```
-
-4. Add your OpenAI API key to `.env`:
+2. Add your OpenAI API key to `.env`:
 ```env
 OPENAI_API_KEY=your-api-key-here
 ```
 
-5. Initialize the database:
+3. Initialize the database:
 ```bash
 uv run python -m src.database_init
 ```
