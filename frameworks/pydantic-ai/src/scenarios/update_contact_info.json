@@ -1,0 +1,41 @@
+{
+  "name": "Update Contact Information",
+  "description": "Test updating customer contact details",
+  "initial_context": {
+    "authenticated": true,
+    "customer_id": 1,
+    "original_request": "Update contact information"
+  },
+  "conversation": [
+    {
+      "user": "I need to update my email address",
+      "expected": {
+        "message_contains": ["update", "email", "new"]
+      }
+    },
+    {
+      "user": "Please change it to newemail@example.com",
+      "expected": {
+        "tools_called": ["update_contact_info"],
+        "context_updates": ["customer", "actions_taken"],
+        "message_contains": ["updated", "successfully", "email"]
+      }
+    },
+    {
+      "user": "Also update my phone to 555-0200",
+      "expected": {
+        "tools_called": ["update_contact_info"],
+        "message_contains": ["phone", "updated", "successfully"]
+      }
+    }
+  ],
+  "expected_outcomes": {
+    "contact_updated": true,
+    "multiple_updates": true
+  },
+  "metadata": {
+    "test_type": "account_management",
+    "priority": "low",
+    "estimated_duration": 30
+  }
+}

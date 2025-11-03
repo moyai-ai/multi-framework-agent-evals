@@ -1,0 +1,42 @@
+{
+  "name": "Authentication Flow",
+  "description": "Test customer authentication and basic account inquiry",
+  "initial_context": {
+    "original_request": "Check account balance"
+  },
+  "conversation": [
+    {
+      "user": "Hi, I need to check my account balance",
+      "expected": {
+        "message_contains": ["authenticate", "verify", "email"],
+        "authenticated": false
+      }
+    },
+    {
+      "user": "My email is test@example.com and the last 4 of my SSN is 1234",
+      "expected": {
+        "tools_called": ["authenticate_customer"],
+        "context_updates": ["authenticated", "customer", "customer_id"],
+        "authenticated": true,
+        "message_contains": ["Welcome", "authenticated"]
+      }
+    },
+    {
+      "user": "Now can you show me my account balances?",
+      "expected": {
+        "tools_called": ["get_account_balance"],
+        "message_contains": ["balance", "$"],
+        "authenticated": true
+      }
+    }
+  ],
+  "expected_outcomes": {
+    "final_authenticated": true,
+    "tools_used": ["authenticate_customer", "get_account_balance"]
+  },
+  "metadata": {
+    "test_type": "authentication",
+    "priority": "high",
+    "estimated_duration": 30
+  }
+}

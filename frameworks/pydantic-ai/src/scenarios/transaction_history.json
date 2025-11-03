@@ -1,0 +1,42 @@
+{
+  "name": "Transaction History",
+  "description": "Test retrieving and explaining recent transactions",
+  "initial_context": {
+    "authenticated": true,
+    "customer_id": 1,
+    "original_request": "View recent transactions"
+  },
+  "conversation": [
+    {
+      "user": "Can you show me my recent transactions?",
+      "expected": {
+        "tools_called": ["get_recent_transactions"],
+        "context_updates": ["recent_transactions", "results"],
+        "message_contains": ["transaction", "date"]
+      }
+    },
+    {
+      "user": "Show me transactions from the last 7 days only",
+      "expected": {
+        "tools_called": ["get_recent_transactions"],
+        "message_contains": ["transaction", "7 days"]
+      }
+    },
+    {
+      "user": "Is there anything unusual in my transaction history?",
+      "expected": {
+        "tools_called": ["check_fraud_alert"],
+        "message_contains": ["fraud", "alert", "unusual"]
+      }
+    }
+  ],
+  "expected_outcomes": {
+    "transactions_retrieved": true,
+    "fraud_check_performed": true
+  },
+  "metadata": {
+    "test_type": "inquiry",
+    "priority": "medium",
+    "estimated_duration": 40
+  }
+}
