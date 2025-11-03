@@ -1,0 +1,39 @@
+rules:
+  - id: sql-injection
+    message: Potential SQL injection vulnerability detected
+    severity: ERROR
+    languages:
+      - python
+    pattern-regex: 'query\s*=\s*f["''].*\{.*\}.*["'']'
+
+  - id: hardcoded-secret
+    message: Hardcoded secret or API key detected
+    severity: ERROR
+    languages:
+      - python
+      - javascript
+      - java
+    pattern-either:
+      - pattern: API_KEY = "..."
+      - pattern: PASSWORD = "..."
+      - pattern: SECRET = "..."
+      - pattern: TOKEN = "..."
+      - pattern: DATABASE_PASSWORD = "..."
+
+  - id: xss-vulnerability
+    message: Potential XSS vulnerability - unsanitized user input in HTML
+    severity: ERROR
+    languages:
+      - python
+    pattern-regex: 'return\s+f["'']<.*\{.*\}.*>["'']'
+
+  - id: command-injection
+    message: Potential command injection vulnerability
+    severity: ERROR
+    languages:
+      - python
+      - javascript
+    pattern-either:
+      - pattern: os.system($X)
+      - pattern: subprocess.call($X, shell=True)
+      - pattern: exec($X)

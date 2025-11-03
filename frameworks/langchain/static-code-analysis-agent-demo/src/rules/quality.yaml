@@ -1,0 +1,29 @@
+rules:
+  - id: empty-exception-handler
+    message: Empty exception handler - may hide errors
+    severity: WARNING
+    languages:
+      - python
+    pattern: |
+      try:
+          ...
+      except:
+          pass
+
+  - id: todo-comment
+    message: TODO comment found - incomplete implementation
+    severity: INFO
+    languages:
+      - python
+      - javascript
+      - java
+    pattern-regex: '(# TODO:.*|// TODO:.*|/\* TODO:.*\*/)'
+
+  - id: print-debugging
+    message: Print statement used for debugging
+    severity: INFO
+    languages:
+      - python
+    pattern-either:
+      - pattern: print(...)
+      - pattern: console.log(...)

@@ -1,0 +1,88 @@
+{
+  "name": "Code Quality Analysis",
+  "description": "Test the agent's ability to identify code quality issues and anti-patterns",
+  "initial_context": {
+    "repository_url": "https://github.com/example/legacy-code",
+    "analysis_type": "quality"
+  },
+  "conversation": [
+    {
+      "user": "Analyze the code quality of https://github.com/example/legacy-code",
+      "expected": {
+        "actions": ["fetch_repository_info", "list_repository_files", "get_file_content", "run_opengrep_analysis", "analyze_code_complexity"],
+        "findings": ["long_function", "deep_nesting", "empty-exception-handler", "todo-comment"],
+        "message_contains": ["quality", "complexity", "refactoring", "maintainability"]
+      }
+    },
+    {
+      "user": "Which files need the most refactoring?",
+      "expected": {
+        "actions": ["summarize_findings"],
+        "message_contains": ["refactor", "complexity", "lines"],
+        "provides_metrics": true
+      }
+    },
+    {
+      "user": "What are the specific code smells found?",
+      "expected": {
+        "message_contains": ["empty exception", "TODO", "magic number", "long function"],
+        "provides_examples": true
+      }
+    }
+  ],
+  "test_files": {
+    "src/legacy_processor.py": {
+      "content": "def process_all_data(data_list, config, user_settings, cache, db_connection, logger, metrics, feature_flags):\n    # This function is way too long - over 100 lines\n    results = []\n    errors = []\n    \n    # TODO: Refactor this monstrosity\n    for item in data_list:\n        try:\n            if item['type'] == 'user':\n                if item['age'] > 18:\n                    if item['country'] == 'US':\n                        if item['premium']:\n                            if feature_flags.get('new_algorithm'):\n                                # Deep nesting - hard to read\n                                result = process_premium_us_adult_new(item)\n                            else:\n                                result = process_premium_us_adult_old(item)\n                        else:\n                            result = process_standard_us_adult(item)\n                    else:\n                        result = process_international_adult(item)\n                else:\n                    result = process_minor(item)\n            elif item['type'] == 'business':\n                # Magic number alert\n                if item['revenue'] > 1000000:\n                    result = process_enterprise(item)\n                elif item['revenue'] > 50000:\n                    result = process_small_business(item)\n                else:\n                    result = process_startup(item)\n            else:\n                result = process_unknown(item)\n            \n            # More processing...\n            results.append(result)\n            \n        except Exception:\n            # Empty exception handler - bad practice\n            pass\n        \n        except ValueError:\n            pass  # Another empty handler\n    \n    # Another 50+ lines of code would go here...\n    return results",
+      "expected_issues": [
+        {
+          "type": "long_function",
+          "severity": "WARNING",
+          "description": "Function exceeds 50 lines"
+        },
+        {
+          "type": "deep_nesting",
+          "severity": "WARNING",
+          "description": "Nesting level exceeds 4"
+        },
+        {
+          "type": "empty-exception-handler",
+          "severity": "WARNING",
+          "count": 2
+        },
+        {
+          "type": "todo-comment",
+          "severity": "INFO"
+        },
+        {
+          "type": "magic-number",
+          "severity": "INFO",
+          "values": ["1000000", "50000"]
+        }
+      ]
+    },
+    "src/utils.py": {
+      "content": "def calculate_score(value):\n    # TODO: Implement proper scoring algorithm\n    return value * 3.14159  # Magic number\n\ndef validate_input(data):\n    try:\n        return process_data(data)\n    except:\n        pass  # Silently ignore all errors\n\ndef check_status():\n    # TODO: Add status check logic\n    return True",
+      "expected_issues": [
+        {
+          "type": "todo-comment",
+          "severity": "INFO",
+          "count": 2
+        },
+        {
+          "type": "empty-exception-handler",
+          "severity": "WARNING"
+        },
+        {
+          "type": "magic-number",
+          "severity": "INFO"
+        }
+      ]
+    }
+  },
+  "metadata": {
+    "test_type": "quality",
+    "priority": "medium",
+    "estimated_duration": 45,
+    "tags": ["code-quality", "refactoring", "maintainability"]
+  }
+}
