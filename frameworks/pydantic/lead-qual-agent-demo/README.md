@@ -48,13 +48,6 @@ Inspired by the [Slack Lead Qualifier example](https://ai.pydantic.dev/examples/
 unset VIRTUAL_ENV && uv sync
 ```
 
-2. Set up environment variables:
-```bash
-# Copy the example file and edit with your API keys
-cp env.example .env
-# Then edit .env with your actual API keys
-```
-
 Get your API keys:
 - OpenAI: https://platform.openai.com/api-keys
 - Linkup.so: https://www.linkup.so/
@@ -156,6 +149,176 @@ Compares qualification results across different lead types:
 - High-priority enterprise leads
 - Technical influencers
 - Unqualified leads
+
+## Running the Scenarios
+
+### Method 1: Command Line (Quick)
+
+Run specific scenarios directly from the command line:
+
+```bash
+# Run single lead qualification
+uv run python src/run_scenario.py single
+
+# Run batch processing demo
+uv run python src/run_scenario.py batch
+
+# Run priority ranking demo
+uv run python src/run_scenario.py priority
+
+# Run scenario comparison
+uv run python src/run_scenario.py comparison
+
+# Run all demos
+uv run python src/run_scenario.py all
+
+# Show available options
+uv run python src/run_scenario.py
+```
+
+### Method 2: Interactive Menu
+
+For a guided experience with menu options:
+
+```bash
+uv run python src/main.py
+```
+
+This will present you with options:
+1. **Quick Demo** - Run a single pre-configured lead qualification
+2. **Interactive Mode** - Enter your own lead information
+3. **Full Demo Suite** - Run all scenarios sequentially
+4. **Batch Processing Demo** - Process 5 sample leads in parallel
+
+### Method 3: Programmatic Execution
+
+You can also run specific scenarios programmatically:
+
+```python
+# Run a specific scenario directly
+import asyncio
+from src.scenarios.demo_runner import DemoRunner
+from src.scenarios.sample_leads import get_sample_leads
+
+async def run_scenarios():
+    runner = DemoRunner(model="gpt-4o-mini")
+
+    # Run single lead demo
+    lead = get_sample_leads()[0]
+    await runner.run_single_lead_demo(lead)
+
+    # Run batch processing (5 leads in parallel)
+    await runner.run_batch_demo()
+
+    # Run priority ranking demo
+    await runner.run_priority_ranking_demo()
+
+    # Run scenario comparison
+    await runner.run_scenario_comparison()
+
+    # Or run all demos
+    await runner.run_all_demos()
+
+# Execute
+asyncio.run(run_scenarios())
+```
+
+### Using Sample Data
+
+The demo includes pre-configured sample leads in different categories:
+
+```python
+from src.scenarios.sample_leads import (
+    get_sample_leads,           # All 8 sample leads
+    get_high_priority_leads,     # Enterprise decision makers
+    get_technical_leads,         # Technical influencers
+    get_unqualified_leads        # Leads that won't qualify
+)
+
+# Example: Qualify only high-priority leads
+import asyncio
+from src.agent.lead_qualifier import LeadQualificationAgent
+
+async def qualify_high_priority():
+    agent = LeadQualificationAgent()
+    leads = get_high_priority_leads()
+
+    analyses = await agent.qualify_batch(leads, parallel=True)
+
+    for analysis in analyses:
+        print(f"{analysis.person_analysis.name}: {analysis.score.value}")
+        print(f"  Confidence: {analysis.confidence:.1%}")
+        print(f"  Action: {analysis.recommended_action}\n")
+
+asyncio.run(qualify_high_priority())
+```
+
+### What Each Scenario Demonstrates
+
+1. **Single Lead Demo** (`single`):
+   - Shows detailed qualification process
+   - Displays person and company analysis
+   - Provides talking points and recommendations
+   - Shows confidence scores and reasoning
+
+   Example output:
+   ```
+   Score: VERY_HIGH
+   Confidence: 92%
+   Summary: Enterprise VP of Engineering at a Python-heavy company...
+   Recommended Action: immediate_outreach
+   ```
+
+2. **Batch Processing Demo** (`batch`):
+   - Processes multiple leads simultaneously
+   - Generates summary table with scores
+   - Identifies high-value leads automatically
+   - Shows performance of parallel processing
+
+   Example output:
+   ```
+   ┌─────────────────┬──────────┬─────────┬────────────┬───────────────┐
+   │ Name            │ Company  │ Score   │ Confidence │ Action        │
+   ├─────────────────┼──────────┼─────────┼────────────┼───────────────┤
+   │ Sarah Chen      │ TechCorp │ HIGH    │ 85%        │ immediate     │
+   │ Michael Rodriguez│ DataFlow │ MEDIUM  │ 72%        │ nurture       │
+   └─────────────────┴──────────┴─────────┴────────────┴───────────────┘
+   ```
+
+3. **Priority Ranking Demo** (`priority`):
+   - Qualifies 6 leads and ranks them by value
+   - Creates prioritized outreach list
+   - Shows top priority lead details
+   - Demonstrates scoring algorithm
+
+   Example output:
+   ```
+   Sales Outreach Priority List:
+   1. Patricia Anderson (CTO) - FinanceCorp - VERY_HIGH (95%)
+   2. Sarah Chen (VP Eng) - TechCorp - HIGH (85%)
+   3. Emily Watson (CTO) - AIStart - HIGH (80%)
+   ```
+
+4. **Scenario Comparison Demo** (`comparison`):
+   - Compares different lead categories side-by-side
+   - Shows average confidence per category
+   - Displays score distribution
+   - Validates qualification logic
+
+   Example output:
+   ```
+   High Priority Leads:
+     • Average Confidence: 88.3%
+     • Score Distribution:
+       - very_high: 2
+       - high: 1
+
+   Technical Leads:
+     • Average Confidence: 75.0%
+     • Score Distribution:
+       - high: 1
+       - medium: 2
+   ```
 
 ## Running Tests
 
