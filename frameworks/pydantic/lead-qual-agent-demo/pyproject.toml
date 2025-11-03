@@ -1,0 +1,52 @@
+[project]
+name = "lead-qual-agent-demo"
+version = "0.1.0"
+description = "Lead qualification agent demo using Pydantic AI and Linkup.so"
+authors = [
+    {name = "Demo Team", email = "demo@example.com"},
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic-ai>=0.0.9",
+    "pydantic>=2.5.0",
+    "httpx>=0.24.0",
+    "python-dotenv>=1.0.0",
+    "rich>=13.0.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-mock>=3.12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "coverage>=7.3.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I", "N", "UP", "B", "C4", "DTZ", "T20", "SIM", "RET"]
+ignore = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
