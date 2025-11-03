@@ -1,0 +1,42 @@
+{
+  "name": "Fund Transfer",
+  "description": "Test fund transfer between customer accounts",
+  "initial_context": {
+    "authenticated": true,
+    "customer_id": 1,
+    "original_request": "Transfer money between accounts"
+  },
+  "conversation": [
+    {
+      "user": "I want to transfer $500 from my checking to my savings account",
+      "expected": {
+        "tools_called": ["get_account_balance"],
+        "message_contains": ["transfer", "checking", "savings"]
+      }
+    },
+    {
+      "user": "Yes, please transfer $500 from account 1 to account 2",
+      "expected": {
+        "tools_called": ["transfer_funds"],
+        "context_updates": ["actions_taken", "results"],
+        "message_contains": ["transfer", "completed", "reference"]
+      }
+    },
+    {
+      "user": "Can you show me my updated balances?",
+      "expected": {
+        "tools_called": ["get_account_balance"],
+        "message_contains": ["balance", "$"]
+      }
+    }
+  ],
+  "expected_outcomes": {
+    "transfer_completed": true,
+    "tools_used": ["get_account_balance", "transfer_funds"]
+  },
+  "metadata": {
+    "test_type": "transaction",
+    "priority": "high",
+    "estimated_duration": 45
+  }
+}

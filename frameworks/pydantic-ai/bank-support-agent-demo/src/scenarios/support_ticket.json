@@ -1,0 +1,40 @@
+{
+  "name": "Support Ticket Creation",
+  "description": "Test creating support tickets for complex issues",
+  "initial_context": {
+    "authenticated": true,
+    "customer_id": 1,
+    "original_request": "Report an issue"
+  },
+  "conversation": [
+    {
+      "user": "I've been having trouble accessing my account on mobile app",
+      "expected": {
+        "message_contains": ["help", "issue", "mobile"]
+      }
+    },
+    {
+      "user": "The app crashes every time I try to log in. I've tried reinstalling but it doesn't help.",
+      "expected": {
+        "tools_called": ["create_support_ticket"],
+        "context_updates": ["support_request", "actions_taken"],
+        "message_contains": ["ticket", "support", "team"]
+      }
+    },
+    {
+      "user": "What's the ticket number for my reference?",
+      "expected": {
+        "message_contains": ["ticket", "#"]
+      }
+    }
+  ],
+  "expected_outcomes": {
+    "ticket_created": true,
+    "escalation_handled": true
+  },
+  "metadata": {
+    "test_type": "support",
+    "priority": "medium",
+    "estimated_duration": 35
+  }
+}
