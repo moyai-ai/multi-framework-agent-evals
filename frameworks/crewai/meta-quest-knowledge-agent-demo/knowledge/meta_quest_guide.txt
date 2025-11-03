@@ -1,0 +1,550 @@
+META QUEST 3 USER GUIDE
+
+===========================================
+INTRODUCTION TO META QUEST
+===========================================
+
+What is Meta Quest?
+
+Meta Quest is a line of virtual reality (VR) headsets developed by Meta (formerly Facebook). The Meta Quest 3 is the latest generation standalone VR headset that combines virtual reality and mixed reality experiences without requiring a PC or external sensors.
+
+Key Features:
+- Standalone VR headset (no PC required)
+- Mixed reality capabilities
+- Advanced hand tracking technology
+- High-resolution displays
+- Powerful Snapdragon XR2 Gen 2 processor
+- 6DOF (six degrees of freedom) tracking
+- Extensive app and game library
+- Wireless design for freedom of movement
+
+===========================================
+GETTING STARTED
+===========================================
+
+Initial Setup:
+
+1. Charge Your Headset
+   - Connect the charging cable to the headset
+   - Plug into a power outlet
+   - Allow at least 2 hours for full charge
+   - LED indicator shows charging status
+
+2. Download the Meta Quest Mobile App
+   - Available on iOS and Android
+   - Search for "Meta Quest" in App Store or Google Play
+   - Install the app on your smartphone
+
+3. Power On Your Headset
+   - Press and hold the power button on the right side
+   - Wait for the Meta logo to appear
+   - Put on the headset
+
+4. Follow the In-Headset Setup
+   - Select your language
+   - Connect to WiFi network
+   - Log in to your Meta account (or create a new one)
+   - Set up your guardian boundary
+   - Adjust the headset fit and IPD (interpupillary distance)
+
+===========================================
+CONTROLLERS
+===========================================
+
+Meta Quest 3 Controllers:
+
+The Meta Quest 3 comes with two Touch Plus controllers designed for intuitive VR interaction.
+
+Controller Features:
+- Ergonomic design for comfortable extended use
+- Haptic feedback for immersive experiences
+- Precision tracking using infrared sensors
+- Multiple buttons and triggers for game controls
+- AA battery powered (one battery per controller)
+
+Controller Layout:
+
+Right Controller:
+- Trigger (index finger)
+- Grip button (middle fingers)
+- A and B buttons (thumb)
+- Thumbstick (thumb)
+- Meta button (home button)
+
+Left Controller:
+- Trigger (index finger)
+- Grip button (middle fingers)
+- X and Y buttons (thumb)
+- Thumbstick (thumb)
+- Menu button
+
+Pairing Controllers:
+1. Remove the battery cover
+2. Insert AA battery
+3. Replace battery cover
+4. Turn on the headset
+5. Controllers should pair automatically
+6. If not, go to Settings > Devices > Pair New Controller
+
+===========================================
+HAND TRACKING
+===========================================
+
+Meta Quest 3 Hand Tracking:
+
+The Meta Quest 3 features advanced hand tracking technology, allowing you to interact with VR experiences using just your hands - no controllers needed.
+
+How Hand Tracking Works:
+- Built-in cameras track your hand movements
+- AI algorithms recognize hand poses and gestures
+- Real-time rendering of virtual hands
+- Supports natural gestures like pinching, pointing, and grabbing
+
+Enabling Hand Tracking:
+1. Go to Settings
+2. Select Hands and Controllers
+3. Toggle Hand Tracking to ON
+4. Choose when to use hands vs. controllers
+
+Supported Gestures:
+- Pinch: Thumb and index finger together (select/grab)
+- Point: Index finger extended (point at UI elements)
+- Palm up: Open hand facing up (menu access)
+- Thumbs up: Confirmation gesture
+- Hand waving: System detection
+
+Apps with Hand Tracking:
+Many apps support hand tracking including:
+- Meta Horizon Home
+- Meta Browser
+- Select games and experiences
+- System menus and settings
+
+===========================================
+MIXED REALITY FEATURES
+===========================================
+
+Meta Quest 3 Mixed Reality:
+
+Mixed reality (MR) blends virtual objects with your real-world environment using passthrough cameras.
+
+Passthrough Technology:
+- Full-color passthrough cameras
+- High-resolution view of your surroundings
+- Low latency for natural interaction
+- Depth sensing for object placement
+
+Mixed Reality Experiences:
+- Games that use your real environment
+- Productivity apps with virtual screens
+- Fitness apps that use your space
+- Creative apps for virtual art
+
+Activating Passthrough:
+- Double-tap the side of headset
+- Press the Meta button and select Passthrough
+- Set as default in Settings > Experimental Features
+
+===========================================
+CONNECTING TO WIFI
+===========================================
+
+WiFi Connection:
+
+A stable WiFi connection is required for downloading apps, multiplayer gaming, and accessing online content.
+
+Connecting to WiFi:
+1. Open Settings from the main menu
+2. Select WiFi
+3. Choose your network from the list
+4. Enter the WiFi password
+5. Select Connect
+6. Wait for connection confirmation
+
+WiFi Requirements:
+- 2.4 GHz or 5 GHz WiFi network
+- WPA2 or WPA3 security
+- Minimum 10 Mbps download speed recommended
+- 50+ Mbps for high-quality streaming
+
+Troubleshooting WiFi:
+- Move closer to router
+- Restart the headset
+- Forget network and reconnect
+- Check router settings
+- Update headset software
+
+===========================================
+CHARGING AND BATTERY
+===========================================
+
+Charging Your Meta Quest 3:
+
+Battery life varies based on usage, typically 1.5-2.5 hours for active gaming.
+
+Charging Process:
+1. Use the included USB-C charging cable
+2. Connect to the headset charging port (left side)
+3. Plug into USB-C power adapter (18W or higher recommended)
+4. LED indicator shows charging status:
+   - Orange: Charging
+   - Green: Fully charged
+   - Red: Low battery
+
+Battery Tips:
+- Charge before first use
+- Store at 40-80% charge for long-term storage
+- Avoid extreme temperatures during charging
+- Can use while charging with extended cable
+
+Battery Life Optimization:
+- Lower screen brightness
+- Reduce volume
+- Close unused apps
+- Disable hand tracking when not needed
+- Use airplane mode for offline content
+
+===========================================
+APPS AND GAMES
+===========================================
+
+Meta Quest Store:
+
+Access thousands of apps and games through the Meta Quest Store.
+
+Popular App Categories:
+- Games (action, adventure, puzzle, sports)
+- Fitness and wellness
+- Entertainment (movies, videos, social)
+- Productivity and utilities
+- Education and training
+- Creative tools
+
+Downloading Apps:
+1. Open the Store from main menu
+2. Browse or search for apps
+3. Select an app to view details
+4. Check reviews and ratings
+5. Click "Buy" or "Free" button
+6. Confirm purchase
+7. App downloads automatically
+
+App Management:
+- View installed apps in Library
+- Update apps from Settings > System Updates
+- Uninstall apps to free space
+- Share apps with family (some apps support App Sharing)
+
+Popular Games:
+- Beat Saber
+- Resident Evil 4 VR
+- Superhot VR
+- Population: One
+- Demeo
+- Red Matter 2
+
+===========================================
+GUARDIAN SYSTEM
+===========================================
+
+Guardian Boundary:
+
+The Guardian system creates a virtual boundary to keep you safe while in VR.
+
+Setting Up Guardian:
+1. During setup or from Settings > Guardian
+2. Choose Stationary or Roomscale
+3. Trace your play area using the controller
+4. Confirm the boundary
+5. System saves the boundary for future use
+
+Guardian Features:
+- Visual grid appears when approaching boundary
+- Color-coded warning levels
+- Passthrough view when crossing boundary
+- Multiple saved boundaries for different rooms
+- Height adjustable floor level
+
+Safety Tips:
+- Clear the play area of obstacles
+- Ensure adequate space (6.5 x 6.5 feet minimum for roomscale)
+- Set up away from stairs, windows, and breakable objects
+- Use a ceiling fan-safe space
+- Check your surroundings regularly
+
+===========================================
+TROUBLESHOOTING
+===========================================
+
+Common Issues and Solutions:
+
+Controllers Not Working:
+- Check battery level
+- Re-pair controllers in Settings
+- Clean the tracking rings
+- Restart the headset
+
+Display Issues:
+- Clean the lenses with microfiber cloth
+- Adjust IPD slider
+- Tighten head strap
+- Check for software updates
+
+Tracking Problems:
+- Ensure adequate lighting
+- Clean the external cameras
+- Reset Guardian boundary
+- Restart the headset
+
+Audio Issues:
+- Check volume settings
+- Clean speaker areas
+- Test with headphones
+- Restart the headset
+
+Performance Issues:
+- Close background apps
+- Clear cache in Settings
+- Restart the headset
+- Check available storage
+
+Factory Reset:
+1. Go to Settings > System
+2. Select Factory Reset
+3. Confirm the action
+4. Headset will restart and erase all data
+5. Set up as new device
+
+===========================================
+SPECIFICATIONS
+===========================================
+
+Meta Quest 3 Technical Specifications:
+
+Display:
+- Resolution: 2064 x 2208 pixels per eye
+- Refresh rate: 90Hz (120Hz experimental)
+- Lens: Pancake lenses
+- Field of view: 110 degrees horizontal
+
+Processor:
+- Qualcomm Snapdragon XR2 Gen 2
+- 8GB RAM
+
+Storage:
+- 128GB or 512GB options
+
+Audio:
+- Integrated stereo speakers
+- 3D spatial audio
+- 3.5mm headphone jack
+
+Connectivity:
+- WiFi 6E (802.11ax)
+- Bluetooth 5.2
+- USB-C port
+
+Tracking:
+- 6DOF inside-out tracking
+- 4 external cameras for tracking
+- Hand tracking support
+
+Weight:
+- Approximately 515 grams
+
+Battery:
+- Built-in rechargeable lithium-ion
+- 1.5-2.5 hours typical usage
+- 18W USB-C charging
+
+Included Accessories:
+- Two Touch Plus controllers
+- Charging cable and adapter
+- Glasses spacer
+- Two AA batteries
+- Silicone face interface
+
+===========================================
+CARE AND MAINTENANCE
+===========================================
+
+Headset Care:
+
+Lens Cleaning:
+- Use only dry microfiber cloth
+- Wipe gently in circular motion
+- Never use liquid cleaners
+- Avoid touching lenses with fingers
+- Store in protective case when not in use
+
+Face Interface Cleaning:
+- Remove silicone interface
+- Wipe with damp cloth
+- Mild soap if needed
+- Air dry completely before reattaching
+- Replace periodically for hygiene
+
+Storage:
+- Keep in cool, dry place
+- Avoid direct sunlight on lenses
+- Store in protective case
+- Keep away from extreme temperatures
+- Maintain 40-80% charge for long-term storage
+
+Controller Maintenance:
+- Replace batteries when low
+- Clean tracking rings gently
+- Store in controller holders
+- Avoid dropping or impacts
+- Update firmware regularly
+
+===========================================
+SAFETY AND HEALTH
+===========================================
+
+VR Safety Guidelines:
+
+Physical Safety:
+- Use in clear, safe play area
+- Remain aware of surroundings
+- Take breaks every 30 minutes
+- Stop if experiencing discomfort
+- Keep out of reach of children under 13
+
+Health Considerations:
+- Stop if experiencing nausea, dizziness, or discomfort
+- Consult doctor if you have pre-existing conditions
+- Start with shorter sessions
+- Adjust IPD for comfortable viewing
+- Ensure proper ventilation
+
+Medical Conditions:
+Consult physician before use if you have:
+- Heart conditions
+- Seizure disorders
+- Vision problems
+- Balance or equilibrium issues
+- Psychiatric conditions
+
+===========================================
+ACCOUNT AND PRIVACY
+===========================================
+
+Meta Account:
+
+A Meta account is required to use Meta Quest 3.
+
+Account Features:
+- Purchase apps and games
+- Save progress across devices
+- Access social features
+- Manage privacy settings
+- View purchase history
+
+Privacy Settings:
+1. Go to Settings > Privacy
+2. Configure:
+   - Activity status
+   - Profile visibility
+   - App permissions
+   - Data sharing preferences
+   - Microphone and camera access
+
+Parental Controls:
+- Set up supervised accounts for teens
+- Restrict app purchases
+- Monitor usage time
+- Block specific content
+- Require PIN for purchases
+
+===========================================
+WARRANTY AND SUPPORT
+===========================================
+
+Warranty Information:
+
+Meta Quest 3 comes with a limited one-year warranty covering manufacturing defects.
+
+Warranty Coverage:
+- Hardware defects
+- Manufacturing issues
+- Normal wear and tear excluded
+- Damage from misuse not covered
+
+Getting Support:
+
+Contact Meta Support:
+- Visit Meta Quest Support website
+- Use in-headset support (Settings > Support)
+- Submit support ticket online
+- Live chat support available
+- Phone support for some regions
+
+Community Resources:
+- Meta Quest Community Forums
+- Official Meta Quest Discord
+- Reddit r/OculusQuest
+- YouTube tutorials
+- Meta Quest Blog
+
+===========================================
+UPDATES AND NEW FEATURES
+===========================================
+
+Software Updates:
+
+Meta regularly releases software updates with new features and improvements.
+
+Checking for Updates:
+1. Go to Settings > System
+2. Select Software Update
+3. Check for updates
+4. Download and install if available
+5. Headset will restart to apply update
+
+Recent Update Features:
+- Improved hand tracking accuracy
+- Enhanced passthrough quality
+- New UI and menu system
+- Performance optimizations
+- New experimental features
+- Bug fixes and stability improvements
+
+Experimental Features:
+Access cutting-edge features in Settings > Experimental:
+- 120Hz refresh rate
+- Dynamic resolution scaling
+- Advanced hand gestures
+- Beta apps and experiences
+
+===========================================
+ACCESSORIES
+===========================================
+
+Recommended Accessories:
+
+Official Meta Accessories:
+- Meta Quest 3 Elite Strap (improved comfort)
+- Meta Quest 3 Elite Strap with Battery (extended play time)
+- Meta Quest 3 Carrying Case
+- Meta Quest 3 Active Straps
+- Charging Dock
+
+Third-Party Accessories:
+- Head strap upgrades
+- Facial interfaces (VR Cover, etc.)
+- Lens protection
+- Controller grips
+- Cable management solutions
+- External batteries
+- Custom cases
+
+===========================================
+
+For more information, visit:
+- Meta Quest Support: www.meta.com/help/quest
+- Meta Quest Community: www.meta.com/quest/community
+- Meta Quest Store: www.meta.com/quest/store
+
+© 2024 Meta Platforms, Inc. All rights reserved.
+Meta Quest is a trademark of Meta Platforms, Inc.

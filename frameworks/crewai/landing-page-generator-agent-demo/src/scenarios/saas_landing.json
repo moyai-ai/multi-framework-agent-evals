@@ -1,0 +1,34 @@
+{
+  "name": "SaaS Product Landing Page",
+  "description": "Generate a comprehensive landing page for a CRM SaaS product",
+  "initial_idea": "Build a landing page for CloudCRM, a cloud-based customer relationship management system designed for small to medium businesses with features like contact management, sales pipeline tracking, and email automation",
+  "conversation": [
+    {
+      "user_input": "Build a landing page for CloudCRM, a cloud-based customer relationship management system designed for small to medium businesses",
+      "expected_output_contains": ["CloudCRM", "CRM", "customer relationship", "sales", "pipeline"],
+      "expected_sections": ["hero", "features", "pricing", "benefits", "testimonials"],
+      "skip_validation": false
+    }
+  ],
+  "expected_final_output": {
+    "sections": ["hero", "features", "benefits", "testimonials", "footer"],
+    "required_elements": [
+      "<!DOCTYPE html>",
+      "<html",
+      "<head>",
+      "<body>",
+      "CloudCRM",
+      "customer",
+      "sales"
+    ],
+    "meta_tags": true,
+    "responsive": true,
+    "cta_buttons": true
+  },
+  "metadata": {
+    "test_type": "saas",
+    "priority": "high",
+    "estimated_duration": 180,
+    "tags": ["saas", "crm", "b2b", "enterprise"]
+  }
+}

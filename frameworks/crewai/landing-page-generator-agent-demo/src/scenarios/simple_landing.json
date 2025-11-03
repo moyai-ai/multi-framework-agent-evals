@@ -1,0 +1,25 @@
+{
+  "name": "Simple Landing Page",
+  "description": "Generate a basic landing page for a productivity app",
+  "initial_idea": "Create a landing page for a task management app called TaskMaster that helps teams collaborate better",
+  "conversation": [
+    {
+      "user_input": "Create a landing page for a task management app called TaskMaster that helps teams collaborate better",
+      "expected_output_contains": ["TaskMaster", "collaboration", "team", "productivity"],
+      "expected_sections": ["hero", "features", "benefits"],
+      "skip_validation": false
+    }
+  ],
+  "expected_final_output": {
+    "sections": ["hero", "features", "testimonials", "footer"],
+    "required_elements": ["<!DOCTYPE html>", "<html", "<head>", "<body>", "TaskMaster"],
+    "meta_tags": true,
+    "responsive": true
+  },
+  "metadata": {
+    "test_type": "basic",
+    "priority": "high",
+    "estimated_duration": 120,
+    "tags": ["productivity", "saas", "b2b"]
+  }
+}

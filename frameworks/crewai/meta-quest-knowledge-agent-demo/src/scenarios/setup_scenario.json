@@ -1,0 +1,32 @@
+{
+  "name": "Setup and Configuration Scenario",
+  "description": "Test questions about Meta Quest setup and configuration",
+  "conversation": [
+    {
+      "user": "How do I set up my Meta Quest for the first time?",
+      "expected": {
+        "message_contains": ["setup", "first"],
+        "skip_validation": false
+      }
+    },
+    {
+      "user": "Do I need a phone to set up Meta Quest?",
+      "expected": {
+        "message_contains": ["phone", "app"],
+        "skip_validation": false
+      }
+    },
+    {
+      "user": "How do I connect Meta Quest to WiFi?",
+      "expected": {
+        "message_contains": ["WiFi", "wireless"],
+        "skip_validation": false
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "setup",
+    "priority": "medium",
+    "estimated_duration_seconds": 90
+  }
+}

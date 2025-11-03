@@ -1,0 +1,40 @@
+{
+  "name": "Multi-Turn Conversation Scenario",
+  "description": "Test multi-turn conversation with follow-up questions",
+  "conversation": [
+    {
+      "user": "Tell me about Meta Quest controllers",
+      "expected": {
+        "message_contains": ["controller"],
+        "skip_validation": false
+      }
+    },
+    {
+      "user": "How do the controllers track hand movements?",
+      "expected": {
+        "message_contains": ["track"],
+        "skip_validation": false
+      }
+    },
+    {
+      "user": "Can I use Meta Quest without controllers?",
+      "expected": {
+        "message_contains": ["hand"],
+        "skip_validation": false
+      }
+    },
+    {
+      "user": "What games work best with hand tracking?",
+      "expected": {
+        "expected_output_contains": ["game"],
+        "skip_validation": true
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "multi_turn",
+    "priority": "high",
+    "estimated_duration_seconds": 120,
+    "tests_context_retention": true
+  }
+}

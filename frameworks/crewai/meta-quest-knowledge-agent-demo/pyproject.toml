@@ -1,0 +1,55 @@
+[project]
+name = "meta-quest-knowledge-agent-demo"
+version = "0.1.0"
+description = "CrewAI-based knowledge agent demo that answers questions about Meta Quest using PDF documentation"
+readme = "README.md"
+authors = [{ name = "robert-moyai", email = "robert@moyai.ai" }]
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "crewai>=0.86.0",
+    "crewai-tools>=0.17.0",
+    "pydantic>=2.10.0",
+    "python-dotenv>=1.0.0",
+    "openai>=1.0.0",
+    "pypdf>=5.1.0",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-community>=0.3.0",
+    "faiss-cpu>=1.9.0",
+]
+
+[project.scripts]
+meta-quest-knowledge = "src.runner:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.26.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.14.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: mark test as an integration test (requires API key)",
+    "unit: mark test as a unit test (no API required)",
+    "slow: mark test as slow-running",
+]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+select = ["E", "W", "F", "I", "N"]
+ignore = ["E501"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]

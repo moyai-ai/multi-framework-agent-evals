@@ -1,0 +1,32 @@
+{
+  "name": "Basic Q&A Scenario",
+  "description": "Test basic question answering capabilities about Meta Quest",
+  "conversation": [
+    {
+      "user": "What is Meta Quest?",
+      "expected": {
+        "message_contains": ["Meta Quest", "virtual reality", "VR"],
+        "skip_validation": false
+      }
+    },
+    {
+      "user": "What are the key features of Meta Quest?",
+      "expected": {
+        "message_contains": ["features"],
+        "skip_validation": false
+      }
+    },
+    {
+      "user": "How do I charge my Meta Quest headset?",
+      "expected": {
+        "message_contains": ["charge", "charging"],
+        "skip_validation": false
+      }
+    }
+  ],
+  "metadata": {
+    "test_type": "basic_qa",
+    "priority": "high",
+    "estimated_duration_seconds": 60
+  }
+}
