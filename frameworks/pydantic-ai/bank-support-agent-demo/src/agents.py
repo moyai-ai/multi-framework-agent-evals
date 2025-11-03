@@ -7,6 +7,16 @@ from pydantic_ai import Agent
 from .context import BankSupportContext
 from .tools import BANK_SUPPORT_TOOLS
 
+# Helper to expose tools property on Agent instances
+def _add_tools_property(agent: Agent[BankSupportContext], tools: List):
+    """Add a tools property to an agent instance for testing purposes."""
+    if not hasattr(agent, 'tools'):
+        # Store tools in a way that can be accessed
+        agent._agent_tools = tools
+        # Add a property-like accessor
+        agent.__dict__['tools'] = tools
+    return agent
+
 
 # System prompts for different agent types
 BANK_SUPPORT_SYSTEM_PROMPT = """You are a professional bank support agent helping customers with their banking needs.
@@ -28,10 +38,12 @@ Guidelines:
 - Maintain customer privacy and security at all times
 
 Authentication Flow:
-1. Greet the customer professionally
-2. Ask for their email and last 4 digits of SSN for verification
+1. ALWAYS use check_authentication_status tool FIRST to see if customer is already authenticated
+2. If not authenticated, ask for their email and last 4 digits of SSN for verification
 3. Once authenticated, proceed with their request
 4. If authentication fails, offer to help with general inquiries only
+
+IMPORTANT: You MUST use the check_authentication_status tool before asking for credentials - the customer may already be authenticated from a previous interaction
 
 Available Operations:
 - View account balances and details
@@ -90,6 +102,9 @@ def create_bank_support_agent(
         tools=BANK_SUPPORT_TOOLS,
         name="Bank Support Agent",
     )
+    
+    # Expose tools for testing
+    _add_tools_property(agent, BANK_SUPPORT_TOOLS)
 
     return agent
 
@@ -129,6 +144,9 @@ def create_fraud_specialist_agent(
         tools=fraud_tools,
         name="Fraud Specialist Agent",
     )
+    
+    # Expose tools for testing
+    _add_tools_property(agent, fraud_tools)
 
     return agent
 
@@ -169,21 +187,28 @@ def create_account_specialist_agent(
         tools=account_tools,
         name="Account Specialist Agent",
     )
+    
+    # Expose tools for testing
+    _add_tools_property(agent, account_tools)
 
     return agent
 
 
-# Agent registry
-AGENTS: Dict[str, Agent[BankSupportContext]] = {
-    "bank_support": create_bank_support_agent(),
-    "fraud_specialist": create_fraud_specialist_agent(),
-    "account_specialist": create_account_specialist_agent(),
+# Agent registry - store factory functions instead of instances
+AGENT_FACTORIES: Dict[str, callable] = {
+    "bank_support": create_bank_support_agent,
+    "fraud_specialist": create_fraud_specialist_agent,
+    "account_specialist": create_account_specialist_agent,
 }
+
+# For backwards compatibility, create a property-like access
+AGENTS: Dict[str, Agent[BankSupportContext]] = {}
 
 
 def get_agent_by_name(name: str) -> Optional[Agent[BankSupportContext]]:
     """
     Get agent by exact or partial name match.
+    Creates a fresh instance each time to avoid threading issues.
 
     Args:
         name: Agent name or key
@@ -194,28 +219,26 @@ def get_agent_by_name(name: str) -> Optional[Agent[BankSupportContext]]:
     name_lower = name.lower()
 
     # Exact match
-    if name_lower in AGENTS:
-        return AGENTS[name_lower]
+    if name_lower in AGENT_FACTORIES:
+        return AGENT_FACTORIES[name_lower]()
 
     # Partial match
-    for key, agent in AGENTS.items():
+    for key, factory in AGENT_FACTORIES.items():
         if name_lower in key.lower():
-            return agent
-        if hasattr(agent, 'name') and name_lower in agent.name.lower():
-            return agent
+            return factory()
 
     return None
 
 
 def get_initial_agent() -> Agent[BankSupportContext]:
-    """Get the initial entry point agent."""
-    return AGENTS["bank_support"]
+    """Get the initial entry point agent. Creates a fresh instance."""
+    return AGENT_FACTORIES["bank_support"]()
 
 
 def list_agents() -> List[Dict[str, Any]]:
     """List all available agents with details."""
     agent_list = []
-    for key, agent in AGENTS.items():
+    for key, factory in AGENT_FACTORIES.items():
         # Get tools from agent - pydantic-ai stores them in _tools
         agent_tools = []
 
@@ -229,15 +252,37 @@ def list_agents() -> List[Dict[str, Any]]:
             agent_tools = ["authenticate_customer", "get_account_balance",
                           "get_recent_transactions", "transfer_funds", "update_contact_info"]
 
+        # Create a temporary instance to get the name
+        temp_agent = factory()
         agent_info = {
             "key": key,
-            "name": agent.name if hasattr(agent, 'name') else key,
+            "name": temp_agent.name if hasattr(temp_agent, 'name') else key,
             "tools": agent_tools[:5],  # Limit to first 5 tools for brevity
             "model": "gpt-4o",  # Default model
         }
         agent_list.append(agent_info)
 
     return agent_list
+
+
+def get_agent_tools(agent: Agent[BankSupportContext]) -> List:
+    """
+    Get tools from a Pydantic AI Agent instance.
+    
+    Args:
+        agent: The agent instance
+        
+    Returns:
+        List of tool functions
+    """
+    # Pydantic AI stores tools in a private _tools attribute or as a property
+    if hasattr(agent, '_tools'):
+        return agent._tools
+    elif hasattr(agent, 'tools'):
+        return agent.tools if agent.tools is not None else []
+    else:
+        # Fallback: try to access via __dict__ or return empty list
+        return getattr(agent, '_tools', [])
 
 
 def get_agent_for_request_type(request_type: str) -> Agent[BankSupportContext]:
@@ -257,11 +302,11 @@ def get_agent_for_request_type(request_type: str) -> Agent[BankSupportContext]:
 
     # Check for fraud-related requests
     if any(keyword in request_lower for keyword in fraud_keywords):
-        return AGENTS["fraud_specialist"]
+        return AGENT_FACTORIES["fraud_specialist"]()
 
     # Check for account-specific requests
     if any(keyword in request_lower for keyword in account_keywords):
-        return AGENTS["account_specialist"]
+        return AGENT_FACTORIES["account_specialist"]()
 
     # Default to general support agent
-    return AGENTS["bank_support"]
+    return AGENT_FACTORIES["bank_support"]()

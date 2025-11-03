@@ -74,14 +74,14 @@ uv run --env-file .env python -m src.runner src/scenarios/authentication_flow.js
 
 Run all scenarios in the directory:
 ```bash
-uv run --env-file .env python -m src.runner src/scenarios/ -v
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/ -v
 ```
 
 ### Running Tests
 
 Run all tests:
 ```bash
-uv run --env-file .env pytest tests/ -v
+unset VIRTUAL_ENV && uv run --env-file .env pytest tests/ -v
 ```
 
 Run specific test categories:
@@ -295,12 +295,6 @@ Create a JSON file in `src/scenarios/`:
 - **Integration Tests**: Test component interactions with mocked dependencies
 - **Scenario Tests**: Full end-to-end conversation flows
 
-### Running Tests with Coverage
-
-```bash
-uv run --env-file .env pytest tests/ --cov=src --cov-report=html
-```
-
 ### Test Fixtures
 
 Key fixtures available in `conftest.py`:
@@ -347,27 +341,6 @@ uv run --env-file .env python -m src.runner src/scenarios/authentication_flow.js
 - Tools are async for optimal performance
 - Database uses connection pooling for concurrent access
 - Scenarios can run in parallel for faster testing
-
-## Security Notes
-
-- Never commit .env files with real API keys
-- SSN data in the demo uses fake last-4 digits only
-- Authentication is simplified for demonstration purposes
-- In production, use proper encryption and security measures
-
-## Contributing
-
-When contributing to this demo:
-
-1. Follow the existing code structure
-2. Add tests for new features
-3. Update scenarios to cover new functionality
-4. Document new tools and agents in this README
-5. Ensure all tests pass before submitting
-
-## License
-
-This is a demonstration project for educational purposes.
 
 ## Support
 

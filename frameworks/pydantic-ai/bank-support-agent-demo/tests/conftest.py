@@ -4,7 +4,7 @@ import pytest
 import asyncio
 import os
 from pathlib import Path
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 import aiosqlite
 
 from src.context import (
@@ -251,6 +251,18 @@ def scenario_files():
     }
 
 
+@pytest.fixture(autouse=True)
+def mock_api_key_for_creation_tests(monkeypatch):
+    """Mock API key for agent creation tests that don't execute the agent."""
+    # Only set a mock key if no real key is present
+    current_key = os.environ.get("OPENAI_API_KEY")
+    if not current_key or current_key.startswith("test-") or (len(current_key) < 20 and not current_key.startswith("sk-")):
+        # Use a valid-length mock key that won't trigger API calls but will pass validation
+        # Pydantic AI needs a key that looks valid (starts with sk- and is at least 51 chars for OpenAI)
+        mock_key = "sk-" + "x" * 48
+        monkeypatch.setenv("OPENAI_API_KEY", mock_key)
+
+
 @pytest.fixture
 def api_key():
     """Check if API key is available."""
@@ -262,6 +274,16 @@ def skip_if_no_api_key(api_key):
     """Skip tests that require API key."""
     if not api_key:
         pytest.skip("OPENAI_API_KEY not set")
+    # Skip if key looks like a test/dummy key
+    if api_key and api_key.startswith("test-"):
+        pytest.skip(f"OPENAI_API_KEY appears to be invalid (starts with 'test-')")
+    # Skip if key is too short
+    if api_key and len(api_key) < 20:
+        pytest.skip(f"OPENAI_API_KEY appears to be invalid (too short)")
+    # For actual API calls, check if it's our mock key (all x's after sk-)
+    if api_key and api_key.startswith("sk-") and api_key[3:] == "x" * 48:
+        # This is our mock key - skip integration tests
+        pytest.skip("OPENAI_API_KEY is a mock key - skipping integration test")
 
 
 @pytest.fixture

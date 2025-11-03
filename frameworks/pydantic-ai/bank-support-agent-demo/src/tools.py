@@ -25,12 +25,12 @@ from .context import (
 DATABASE_PATH = os.getenv("DATABASE_PATH", "src/data/bank_support.db")
 
 
-async def get_db_connection():
+def get_db_connection():
     """Get database connection."""
     db_path = Path(DATABASE_PATH)
     if not db_path.parent.exists():
         db_path.parent.mkdir(parents=True, exist_ok=True)
-    return await aiosqlite.connect(str(db_path))
+    return aiosqlite.connect(str(db_path))
 
 
 async def authenticate_customer(
@@ -50,7 +50,7 @@ async def authenticate_customer(
         Authentication status message
     """
     # In production, this would verify against secure storage
-    async with await get_db_connection() as db:
+    async with get_db_connection() as db:
         cursor = await db.execute(
             "SELECT * FROM customers WHERE email = ? AND ssn_last_four = ?",
             (email, last_four_ssn)
@@ -69,10 +69,10 @@ async def authenticate_customer(
             )
 
             # Update context
-            ctx.data.authenticated = True
-            ctx.data.customer = customer
-            ctx.data.customer_id = customer.id
-            ctx.data.current_stage = "authenticated"
+            ctx.deps.authenticated = True
+            ctx.deps.customer = customer
+            ctx.deps.customer_id = customer.id
+            ctx.deps.current_stage = "authenticated"
 
             # Load customer accounts
             cursor = await db.execute(
@@ -81,7 +81,7 @@ async def authenticate_customer(
             )
             account_rows = await cursor.fetchall()
 
-            ctx.data.accounts = []
+            ctx.deps.accounts = []
             for acc_row in account_rows:
                 account = Account(
                     id=acc_row[0],
@@ -92,11 +92,11 @@ async def authenticate_customer(
                     created_at=datetime.fromisoformat(acc_row[5]),
                     is_active=acc_row[6] if len(acc_row) > 6 else True
                 )
-                ctx.data.accounts.append(account)
+                ctx.deps.accounts.append(account)
 
             return f"Successfully authenticated. Welcome back, {customer.name}!"
         else:
-            ctx.data.error_message = "Authentication failed"
+            ctx.deps.error_message = "Authentication failed"
             return "Authentication failed. Please verify your credentials."
 
 
@@ -114,15 +114,15 @@ async def get_account_balance(
     Returns:
         Account balance information
     """
-    if not ctx.data.authenticated:
+    if not ctx.deps.authenticated:
         return "You must be authenticated to view account balances."
 
-    if not ctx.data.accounts:
+    if not ctx.deps.accounts:
         return "No accounts found for your profile."
 
     results = []
 
-    for account in ctx.data.accounts:
+    for account in ctx.deps.accounts:
         if account_type and account.account_type.value != account_type.lower():
             continue
 
@@ -137,7 +137,7 @@ async def get_account_balance(
         return f"No {account_type} accounts found." if account_type else "No accounts found."
 
     # Store in context results
-    ctx.data.results = {"accounts": results}
+    ctx.deps.results = {"accounts": results}
 
     # Format response
     response = []
@@ -170,10 +170,10 @@ async def get_recent_transactions(
     Returns:
         Recent transactions as formatted string
     """
-    if not ctx.data.authenticated:
+    if not ctx.deps.authenticated:
         return "You must be authenticated to view transactions."
 
-    async with await get_db_connection() as db:
+    async with get_db_connection() as db:
         # Build query
         if account_id:
             query = """
@@ -186,7 +186,7 @@ async def get_recent_transactions(
             params = (account_id, (datetime.now() - timedelta(days=days)).isoformat(), limit)
         else:
             # Get all accounts for customer
-            account_ids = [acc.id for acc in ctx.data.accounts]
+            account_ids = [acc.id for acc in ctx.deps.accounts]
             if not account_ids:
                 return "No accounts found."
 
@@ -227,11 +227,11 @@ async def get_recent_transactions(
             })
 
         # Store in context
-        ctx.data.recent_transactions = [
+        ctx.deps.recent_transactions = [
             Transaction(**{k: v for k, v in t.items() if k != "account_type"})
             for t in transactions[:5]  # Store first 5 in context
         ]
-        ctx.data.results = {"transactions": transactions}
+        ctx.deps.results = {"transactions": transactions}
 
         # Format response
         response = [f"Recent transactions (last {days} days):"]
@@ -265,19 +265,19 @@ async def transfer_funds(
     Returns:
         Transfer status message
     """
-    if not ctx.data.authenticated:
+    if not ctx.deps.authenticated:
         return "You must be authenticated to transfer funds."
 
     amount_decimal = Decimal(str(amount))
 
     # Validate accounts belong to customer
-    customer_account_ids = [acc.id for acc in ctx.data.accounts]
+    customer_account_ids = [acc.id for acc in ctx.deps.accounts]
     if from_account_id not in customer_account_ids:
         return "Source account not found or not authorized."
     if to_account_id not in customer_account_ids:
         return "Destination account not found or not authorized."
 
-    async with await get_db_connection() as db:
+    async with get_db_connection() as db:
         try:
             # Start transaction
             await db.execute("BEGIN")
@@ -331,8 +331,8 @@ async def transfer_funds(
             await db.commit()
 
             # Update context
-            ctx.data.actions_taken.append(f"Transferred ${amount_decimal} from account {from_account_id} to {to_account_id}")
-            ctx.data.results = {
+            ctx.deps.actions_taken.append(f"Transferred ${amount_decimal} from account {from_account_id} to {to_account_id}")
+            ctx.deps.results = {
                 "transfer": {
                     "amount": float(amount_decimal),
                     "reference": ref_number,
@@ -344,7 +344,7 @@ async def transfer_funds(
 
         except Exception as e:
             await db.execute("ROLLBACK")
-            ctx.data.error_message = str(e)
+            ctx.deps.error_message = str(e)
             return f"Transfer failed: {str(e)}"
 
 
@@ -366,12 +366,12 @@ async def create_support_ticket(
     Returns:
         Ticket creation status
     """
-    if not ctx.data.authenticated:
+    if not ctx.deps.authenticated:
         customer_id = 0  # Anonymous ticket
     else:
-        customer_id = ctx.data.customer_id
+        customer_id = ctx.deps.customer_id
 
-    async with await get_db_connection() as db:
+    async with get_db_connection() as db:
         now = datetime.now().isoformat()
         cursor = await db.execute(
             """INSERT INTO support_requests
@@ -393,8 +393,8 @@ async def create_support_ticket(
         )
 
         # Update context
-        ctx.data.support_request = support_request
-        ctx.data.actions_taken.append(f"Created support ticket #{ticket_id}")
+        ctx.deps.support_request = support_request
+        ctx.deps.actions_taken.append(f"Created support ticket #{ticket_id}")
 
         return f"Support ticket #{ticket_id} created successfully. Our team will review your request shortly."
 
@@ -413,17 +413,17 @@ async def check_fraud_alert(
     Returns:
         Fraud alert status
     """
-    if not ctx.data.authenticated:
+    if not ctx.deps.authenticated:
         return "You must be authenticated to check fraud alerts."
 
-    async with await get_db_connection() as db:
+    async with get_db_connection() as db:
         if transaction_id:
             cursor = await db.execute(
                 "SELECT * FROM fraud_alerts WHERE transaction_id = ?",
                 (transaction_id,)
             )
         else:
-            account_ids = [acc.id for acc in ctx.data.accounts]
+            account_ids = [acc.id for acc in ctx.deps.accounts]
             placeholders = ",".join("?" * len(account_ids))
             cursor = await db.execute(
                 f"SELECT * FROM fraud_alerts WHERE account_id IN ({placeholders}) AND status = 'active'",
@@ -447,7 +447,7 @@ async def check_fraud_alert(
                 "status": row[6]
             })
 
-        ctx.data.results = {"fraud_alerts": alerts}
+        ctx.deps.results = {"fraud_alerts": alerts}
 
         response = ["Active fraud alerts:"]
         for alert in alerts:
@@ -456,7 +456,7 @@ async def check_fraud_alert(
                 f"(Created: {alert['created_at'][:10]})"
             )
 
-        ctx.data.needs_escalation = True  # Fraud alerts should be escalated
+        ctx.deps.needs_escalation = True  # Fraud alerts should be escalated
         response.append("\nIMPORTANT: Please contact our fraud department immediately at 1-800-FRAUD-STOP.")
 
         return "\n".join(response)
@@ -478,13 +478,13 @@ async def update_contact_info(
     Returns:
         Update status message
     """
-    if not ctx.data.authenticated:
+    if not ctx.deps.authenticated:
         return "You must be authenticated to update contact information."
 
     if not email and not phone:
         return "Please provide at least one field to update (email or phone)."
 
-    async with await get_db_connection() as db:
+    async with get_db_connection() as db:
         updates = []
         params = []
 
@@ -495,7 +495,7 @@ async def update_contact_info(
             updates.append("phone = ?")
             params.append(phone)
 
-        params.append(ctx.data.customer_id)
+        params.append(ctx.deps.customer_id)
 
         query = f"UPDATE customers SET {', '.join(updates)} WHERE id = ?"
         await db.execute(query, params)
@@ -503,17 +503,37 @@ async def update_contact_info(
 
         # Update context
         if email:
-            ctx.data.customer.email = email
+            ctx.deps.customer.email = email
         if phone:
-            ctx.data.customer.phone = phone
+            ctx.deps.customer.phone = phone
 
-        ctx.data.actions_taken.append(f"Updated contact info: {', '.join(updates)}")
+        ctx.deps.actions_taken.append(f"Updated contact info: {', '.join(updates)}")
 
         return "Contact information updated successfully."
 
 
+async def check_authentication_status(
+    ctx: RunContext[BankSupportContext],
+) -> str:
+    """
+    Check if the customer is currently authenticated.
+
+    Args:
+        ctx: The context for the current conversation
+
+    Returns:
+        Authentication status message
+    """
+    if ctx.deps.authenticated:
+        customer_name = ctx.deps.customer.name if ctx.deps.customer else "Customer"
+        return f"Customer {customer_name} is currently authenticated and can access account services."
+    else:
+        return "Customer is not authenticated. Please authenticate first to access account services."
+
+
 # Export tools as a list for the agent
 BANK_SUPPORT_TOOLS = [
+    check_authentication_status,
     authenticate_customer,
     get_account_balance,
     get_recent_transactions,

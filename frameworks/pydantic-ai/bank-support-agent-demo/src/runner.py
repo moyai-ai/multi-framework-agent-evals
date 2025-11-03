@@ -2,11 +2,13 @@
 
 import asyncio
 import json
+import re
 import time
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.table import Table
@@ -23,6 +25,16 @@ from .context import (
 
 
 console = Console()
+
+
+class JSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder for handling datetime and Decimal."""
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        if isinstance(obj, Decimal):
+            return str(obj)
+        return super().default(obj)
 
 
 @dataclass
@@ -76,15 +88,19 @@ class ScenarioReport:
 class ScenarioRunner:
     """Executes test scenarios and validates results."""
 
-    def __init__(self, verbose: bool = False, api_key: str = None):
+    def __init__(self, verbose: bool = False, api_key: str = None, reports_dir: str = "reports"):
         self.verbose = verbose
         self.api_key = api_key
+        self.reports_dir = Path(reports_dir)
         load_dotenv()
 
         # Override API key if provided
         if api_key:
             import os
             os.environ["OPENAI_API_KEY"] = api_key
+
+        # Create reports directory if it doesn't exist
+        self.reports_dir.mkdir(parents=True, exist_ok=True)
 
     async def run_scenario(self, scenario_path: str) -> ScenarioReport:
         """Execute a scenario from JSON file."""
@@ -152,27 +168,35 @@ class ScenarioRunner:
         # Create initial context
         context = create_initial_context(**scenario.initial_context)
 
-        # Determine initial agent
-        if scenario.metadata and "initial_agent" in scenario.metadata:
-            agent = get_agent_by_name(scenario.metadata["initial_agent"])
-        else:
-            agent = get_initial_agent()
-
-        if not agent:
-            scenario_errors.append("Could not initialize agent")
-            return ScenarioReport(
-                scenario_name=scenario.name,
-                success=False,
-                turn_results=turn_results,
-                total_time=time.time() - start_time,
-                errors=scenario_errors,
-                summary={}
-            )
-
         # Execute each turn
         for i, turn in enumerate(scenario.conversation, 1):
             if self.verbose:
                 console.print(f"\n[bold yellow]Turn {i}:[/bold yellow] {turn.user_input}")
+
+            # Create fresh agent for each turn to avoid threading issues
+            # Check if we need a specialized agent based on context
+            if context.needs_escalation and "fraud" in turn.user_input.lower():
+                agent = get_agent_by_name("fraud_specialist")
+            elif i == 1 and scenario.metadata and "initial_agent" in scenario.metadata:
+                agent = get_agent_by_name(scenario.metadata["initial_agent"])
+            else:
+                agent = get_initial_agent()
+
+            # Check if agent initialization failed
+            if agent is None:
+                scenario_errors.append("Could not initialize agent")
+                turn_result = TurnResult(
+                    user_input=turn.user_input,
+                    agent_response="Error: Could not initialize agent",
+                    tools_called=[],
+                    context_before=context,
+                    context_after=context,
+                    context_changes={},
+                    execution_time=0,
+                    errors=["Could not initialize agent"]
+                )
+                turn_results.append(turn_result)
+                continue
 
             turn_result = await self._execute_turn(agent, context, turn, i)
             turn_results.append(turn_result)
@@ -180,12 +204,8 @@ class ScenarioRunner:
             if turn_result.errors and not turn.skip_validation:
                 scenario_errors.extend(turn_result.errors)
 
-            # Update context for next turn
-            context = turn_result.context_after
-
-            # Check if we need to switch agents based on context
-            if context.needs_escalation and "fraud" in turn.user_input.lower():
-                agent = get_agent_by_name("fraud_specialist")
+            # Update context for next turn (create a copy to avoid issues)
+            context = turn_result.context_after.model_copy(deep=True)
 
         # Generate summary
         total_time = time.time() - start_time
@@ -196,7 +216,7 @@ class ScenarioRunner:
         if self.verbose:
             self._print_summary(summary, success, total_time)
 
-        return ScenarioReport(
+        report = ScenarioReport(
             scenario_name=scenario.name,
             success=success,
             turn_results=turn_results,
@@ -204,6 +224,11 @@ class ScenarioRunner:
             errors=scenario_errors,
             summary=summary
         )
+
+        # Save JSON report
+        self._save_json_report(report, scenario.name)
+
+        return report
 
     async def _execute_turn(
         self,
@@ -226,14 +251,23 @@ class ScenarioRunner:
             )
 
             # Extract response and tool calls
-            agent_response = result.data
+            # Pydantic AI uses result.output for the response
+            agent_response = result.output if hasattr(result, 'output') else str(result)
 
-            # Track tool calls from the result
-            if hasattr(result, '_tool_calls'):
-                tools_called = [call.tool_name for call in result._tool_calls]
-            elif hasattr(result, 'usage') and result.usage:
-                # Try to extract from usage metadata if available
-                pass
+            # Track tool calls from the messages
+            tools_called = []
+            try:
+                # Get all messages from this run to check for tool calls
+                if hasattr(result, 'all_messages'):
+                    messages = result.all_messages()
+                    for msg in messages:
+                        # Check if message contains tool call information
+                        if hasattr(msg, 'parts'):
+                            for part in msg.parts:
+                                if hasattr(part, 'tool_name'):
+                                    tools_called.append(part.tool_name)
+            except:
+                pass  # If we can't get tool calls, continue without them
 
             # The context is modified in place during tool execution
             context_after = context
@@ -317,6 +351,48 @@ class ScenarioRunner:
 
         return errors
 
+    def _scenario_report_to_dict(self, report: ScenarioReport) -> Dict[str, Any]:
+        """Convert ScenarioReport to JSON-serializable dictionary."""
+        return {
+            "scenario_name": report.scenario_name,
+            "success": report.success,
+            "total_time": report.total_time,
+            "errors": report.errors,
+            "summary": report.summary,
+            "timestamp": datetime.now().isoformat(),
+            "turn_results": [
+                {
+                    "user_input": tr.user_input,
+                    "agent_response": tr.agent_response,
+                    "tools_called": tr.tools_called,
+                    "context_before": tr.context_before.model_dump(mode="json") if tr.context_before else None,
+                    "context_after": tr.context_after.model_dump(mode="json") if tr.context_after else None,
+                    "context_changes": tr.context_changes,
+                    "execution_time": tr.execution_time,
+                    "errors": tr.errors
+                }
+                for tr in report.turn_results
+            ]
+        }
+
+    def _save_json_report(self, report: ScenarioReport, scenario_identifier: str):
+        """Save scenario report as JSON file."""
+        # Create a safe filename from scenario identifier
+        safe_name = re.sub(r'[^\w\s-]', '', scenario_identifier).strip()
+        safe_name = re.sub(r'[-\s]+', '_', safe_name).lower()
+        
+        # Add timestamp for uniqueness
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_filename = self.reports_dir / f"{safe_name}_{timestamp}.json"
+        
+        report_dict = self._scenario_report_to_dict(report)
+        
+        with open(report_filename, 'w') as f:
+            json.dump(report_dict, f, indent=2, cls=JSONEncoder)
+        
+        if self.verbose:
+            console.print(f"[dim]Report saved to: {report_filename}[/dim]")
+
     def _generate_summary(self, scenario: TestScenario, turn_results: List[TurnResult]) -> Dict[str, Any]:
         """Generate summary statistics for the scenario."""
         total_tools_called = sum(len(tr.tools_called) for tr in turn_results)
@@ -374,7 +450,7 @@ class ScenarioRunner:
                 reports[scenario_file.stem] = report
             except Exception as e:
                 console.print(f"[red]Failed to run {scenario_file.name}: {str(e)}[/red]")
-                reports[scenario_file.stem] = ScenarioReport(
+                error_report = ScenarioReport(
                     scenario_name=scenario_file.stem,
                     success=False,
                     turn_results=[],
@@ -382,6 +458,9 @@ class ScenarioRunner:
                     errors=[str(e)],
                     summary={}
                 )
+                reports[scenario_file.stem] = error_report
+                # Save error report as well
+                self._save_json_report(error_report, scenario_file.stem)
 
         # Print overall summary
         self._print_overall_summary(reports)
