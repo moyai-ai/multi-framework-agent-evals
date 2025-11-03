@@ -98,7 +98,7 @@ class TestLeadQualificationAgent:
 
             # Mock the agent.run method
             mock_result = Mock()
-            mock_result.data = mock_qualification_analysis
+            mock_result.output = mock_qualification_analysis
             agent.agent.run = AsyncMock(return_value=mock_result)
 
             result = await agent.qualify_lead(sample_lead)
@@ -115,7 +115,7 @@ class TestLeadQualificationAgent:
             agent = LeadQualificationAgent()
 
             mock_result = Mock()
-            mock_result.data = mock_qualification_analysis
+            mock_result.output = mock_qualification_analysis
             agent.agent.run = AsyncMock(return_value=mock_result)
 
             context = {"additional_info": "Met at conference"}
@@ -136,7 +136,7 @@ class TestLeadQualificationAgent:
             ]
 
             mock_result = Mock()
-            mock_result.data = mock_qualification_analysis
+            mock_result.output = mock_qualification_analysis
             agent.agent.run = AsyncMock(return_value=mock_result)
 
             results = await agent.qualify_batch(leads, parallel=True)
@@ -157,7 +157,7 @@ class TestLeadQualificationAgent:
             ]
 
             mock_result = Mock()
-            mock_result.data = mock_qualification_analysis
+            mock_result.output = mock_qualification_analysis
             agent.agent.run = AsyncMock(return_value=mock_result)
 
             results = await agent.qualify_batch(leads, parallel=False)

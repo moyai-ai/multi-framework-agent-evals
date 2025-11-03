@@ -131,8 +131,8 @@ class LeadQualificationAgent:
         # Run the agent
         result = await self.agent.run(prompt, deps=agent_deps)
 
-        # Access the data from the result
-        qualification = result.data
+        # Access the output from the result
+        qualification = result.output
 
         # Set the lead_id in the result
         if qualification:
