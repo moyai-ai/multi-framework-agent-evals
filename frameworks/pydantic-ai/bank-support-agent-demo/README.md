@@ -69,7 +69,7 @@ uv run python -m src.database_init
 
 Execute a single scenario:
 ```bash
-uv run --env-file .env python -m src.runner src/scenarios/authentication_flow.json -v
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/authentication_flow.json -v
 ```
 
 Run all scenarios in the directory:
@@ -87,13 +87,13 @@ unset VIRTUAL_ENV && uv run --env-file .env pytest tests/ -v
 Run specific test categories:
 ```bash
 # Unit tests only
-uv run --env-file .env pytest tests/ -m unit
+unset VIRTUAL_ENV && uv run --env-file .env pytest tests/ -m unit
 
 # Integration tests
-uv run --env-file .env pytest tests/ -m integration
+unset VIRTUAL_ENV && uv run --env-file .env pytest tests/ -m integration
 
 # Scenario tests
-uv run --env-file .env pytest tests/ -m scenario
+unset VIRTUAL_ENV && uv run --env-file .env pytest tests/ -m scenario
 ```
 
 ### Example Output
