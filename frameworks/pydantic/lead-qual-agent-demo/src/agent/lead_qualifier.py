@@ -114,22 +114,30 @@ class LeadQualificationAgent:
             **(context or {})
         }
 
-        # Create the prompt for the agent
-        prompt = f"""Please qualify the following lead:
+        # Set the context variable for tools to access deps
+        from ..tools.linkup_search import _deps_context
+        token = _deps_context.set(agent_deps)
+        
+        try:
+            # Create the prompt for the agent
+            prompt = f"""Please qualify the following lead:
 
-        Name: {lead.name}
-        Email: {lead.email}
-        Company: {lead.company or "Unknown"}
-        Title: {lead.title or "Unknown"}
-        LinkedIn: {lead.linkedin_url or "Not provided"}
-        Additional Info: {lead.additional_info if lead.additional_info else "None"}
+            Name: {lead.name}
+            Email: {lead.email}
+            Company: {lead.company or "Unknown"}
+            Title: {lead.title or "Unknown"}
+            LinkedIn: {lead.linkedin_url or "Not provided"}
+            Additional Info: {lead.additional_info if lead.additional_info else "None"}
 
-        Research this lead thoroughly using web search and provide a complete qualification analysis.
-        Focus on understanding both the individual's role and authority, as well as the company's
-        potential need for developer tools and AI/ML platforms."""
+            Research this lead thoroughly using web search and provide a complete qualification analysis.
+            Focus on understanding both the individual's role and authority, as well as the company's
+            potential need for developer tools and AI/ML platforms."""
 
-        # Run the agent
-        result = await self.agent.run(prompt, deps=agent_deps)
+            # Run the agent
+            result = await self.agent.run(prompt, deps=agent_deps)
+        finally:
+            # Reset the context variable
+            _deps_context.reset(token)
 
         # Access the output from the result
         qualification = result.output
@@ -143,7 +151,8 @@ class LeadQualificationAgent:
     async def qualify_batch(
         self,
         leads: List[Lead],
-        parallel: bool = True
+        parallel: bool = True,
+        max_concurrent: int = 2
     ) -> List[QualificationAnalysis]:
         """
         Qualify multiple leads.
@@ -151,13 +160,21 @@ class LeadQualificationAgent:
         Args:
             leads: List of Lead objects to qualify
             parallel: Whether to process leads in parallel (default: True)
+            max_concurrent: Maximum number of leads to process concurrently (default: 2)
 
         Returns:
             List of QualificationAnalysis objects
         """
         if parallel:
             import asyncio
-            tasks = [self.qualify_lead(lead) for lead in leads]
+            # Use semaphore to limit concurrent lead processing
+            semaphore = asyncio.Semaphore(max_concurrent)
+            
+            async def qualify_with_limit(lead: Lead):
+                async with semaphore:
+                    return await self.qualify_lead(lead)
+            
+            tasks = [qualify_with_limit(lead) for lead in leads]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
             # Filter out any exceptions

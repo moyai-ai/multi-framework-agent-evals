@@ -220,7 +220,7 @@ class TestLinkupSearchTool:
 
         mock_ctx = {"search_tool": mock_tool}
 
-        result = await search_linkup(mock_ctx, "test query", "standard")
+        result = await search_linkup("test query", "standard", deps=mock_ctx)
 
         assert "Search results for 'test query'" in result
         assert "Result 1" in result
@@ -248,7 +248,7 @@ class TestLinkupSearchTool:
 
         mock_ctx = {"search_tool": mock_tool}
 
-        result = await search_linkup(mock_ctx, "test query", "summary")
+        result = await search_linkup("test query", "summary", deps=mock_ctx)
 
         assert "Summary for 'test query'" in result
         assert "This is a summary" in result
@@ -265,7 +265,7 @@ class TestLinkupSearchTool:
 
         mock_ctx = {"search_tool": mock_tool}
 
-        result = await search_linkup(mock_ctx, "test query", "standard")
+        result = await search_linkup("test query", "standard", deps=mock_ctx)
 
         assert "No results found for query: test query" in result
 
@@ -280,7 +280,7 @@ class TestLinkupSearchTool:
 
                 mock_ctx = {}  # No search_tool in context
 
-                result = await search_linkup(mock_ctx, "test query", "standard")
+                result = await search_linkup("test query", "standard", deps=mock_ctx)
 
                 mock_tool_class.assert_called_once()
                 mock_tool.search.assert_called_once_with("test query")

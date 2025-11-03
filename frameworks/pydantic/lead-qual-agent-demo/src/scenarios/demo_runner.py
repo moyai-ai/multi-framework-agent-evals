@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from pathlib import Path
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from rich.console import Console
@@ -32,6 +33,28 @@ class DemoRunner:
         """
         self.console = Console()
         self.agent = LeadQualificationAgent(model=model)
+        # Ensure reports directory exists
+        self.reports_dir = Path(__file__).parent.parent.parent / "reports"
+        self.reports_dir.mkdir(exist_ok=True)
+
+    def save_report(self, report_data: Dict[str, Any], filename: str):
+        """
+        Save a JSON report to the reports directory.
+
+        Args:
+            report_data: Dictionary containing report data
+            filename: Name of the file (will have .json appended if not present)
+        """
+        if not filename.endswith('.json'):
+            filename += '.json'
+        
+        report_path = self.reports_dir / filename
+        report_data['report_timestamp'] = datetime.now().isoformat()
+        
+        with open(report_path, 'w', encoding='utf-8') as f:
+            json.dump(report_data, f, indent=2, default=str, ensure_ascii=False)
+        
+        self.console.print(f"[dim]Report saved to: {report_path}[/dim]")
 
     def print_header(self, title: str):
         """Print a formatted header."""
@@ -175,6 +198,16 @@ class DemoRunner:
                 return
 
         self.print_analysis(analysis)
+        
+        # Save report
+        report_data = {
+            "scenario": "single_lead",
+            "lead": lead.model_dump(mode='json'),
+            "analysis": analysis.model_dump(mode='json'),
+        }
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.save_report(report_data, f"single_lead_{timestamp}.json")
+        
         return analysis
 
     async def run_batch_demo(self, leads: Optional[List[Lead]] = None):
@@ -209,6 +242,17 @@ class DemoRunner:
         high_value = self.agent.get_high_value_leads(analyses)
         if high_value:
             self.console.print(f"\n[bold green]Found {len(high_value)} high-value leads![/bold green]")
+
+        # Save report
+        report_data = {
+            "scenario": "batch",
+            "total_leads": len(leads),
+            "leads": [lead.model_dump(mode='json') for lead in leads],
+            "analyses": [analysis.model_dump(mode='json') for analysis in analyses],
+            "high_value_count": len(high_value) if high_value else 0,
+        }
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.save_report(report_data, f"batch_{timestamp}.json")
 
         return analyses
 
@@ -275,6 +319,30 @@ class DemoRunner:
             self.console.print(f"• {top['name']} from {top['company']}")
             self.console.print(f"• Key Talking Point: {top['key_talking_point']}")
 
+        # Save report
+        # Convert priority list items to JSON-serializable format
+        serializable_priority_list = []
+        for item in priority_list:
+            serializable_item = {
+                "priority": item["priority"],
+                "name": item["name"],
+                "company": item["company"],
+                "score": item["score"].value if hasattr(item["score"], 'value') else str(item["score"]),
+                "confidence": item["confidence"],
+                "recommended_action": item["recommended_action"],
+                "key_talking_point": item.get("key_talking_point", ""),
+            }
+            serializable_priority_list.append(serializable_item)
+        
+        report_data = {
+            "scenario": "priority_ranking",
+            "total_leads": len(leads),
+            "priority_list": serializable_priority_list,
+            "analyses": [analysis.model_dump(mode='json') for analysis in analyses],
+        }
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.save_report(report_data, f"priority_ranking_{timestamp}.json")
+
         return priority_list
 
     async def run_scenario_comparison(self):
@@ -324,10 +392,37 @@ class DemoRunner:
             for score, count in score_counts.items():
                 self.console.print(f"    - {score.value}: {count}")
 
+        # Save report
+        serializable_analyses = {}
+        for scenario_name, analyses in all_analyses.items():
+            serializable_analyses[scenario_name] = {
+                "analyses": [analysis.model_dump(mode='json') for analysis in analyses],
+                "summary": {
+                    "count": len(analyses),
+                    "avg_confidence": sum(a.confidence for a in analyses) / len(analyses) if analyses else 0,
+                    "score_distribution": {
+                        score.value: sum(1 for a in analyses if a.score == score)
+                        for score in QualificationScore
+                    }
+                }
+            }
+        
+        report_data = {
+            "scenario": "comparison",
+            "scenarios": serializable_analyses,
+        }
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.save_report(report_data, f"comparison_{timestamp}.json")
+
         return all_analyses
 
-    async def run_all_demos(self):
-        """Run all demonstration scenarios."""
+    async def run_all_demos(self, interactive: bool = True):
+        """
+        Run all demonstration scenarios.
+        
+        Args:
+            interactive: If True, pause for user input between demos. If False, run continuously.
+        """
         demos = [
             ("Single Lead", self.run_single_lead_demo(get_sample_leads()[0])),
             ("Batch Processing", self.run_batch_demo()),
@@ -335,11 +430,25 @@ class DemoRunner:
             ("Scenario Comparison", self.run_scenario_comparison()),
         ]
 
+        results = []
         for name, demo_coro in demos:
             self.console.print(f"\n[bold magenta]Running: {name}[/bold magenta]")
-            await demo_coro
-            self.console.print("\n[dim]Press Enter to continue to next demo...[/dim]")
-            input()
+            result = await demo_coro
+            results.append({"name": name, "completed": True})
+            if interactive:
+                self.console.print("\n[dim]Press Enter to continue to next demo...[/dim]")
+                input()
+            else:
+                self.console.print("")
+        
+        # Save summary report for "all" scenario
+        report_data = {
+            "scenario": "all",
+            "total_scenarios": len(demos),
+            "completed_scenarios": [r["name"] for r in results],
+        }
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.save_report(report_data, f"all_scenarios_{timestamp}.json")
 
 
 async def main():

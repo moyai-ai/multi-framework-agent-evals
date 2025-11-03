@@ -52,7 +52,7 @@ async def main():
 
     elif scenario == "all":
         print("Running All Demos...")
-        await runner.run_all_demos()
+        await runner.run_all_demos(interactive=False)
 
     else:
         print(f"Unknown scenario: {scenario}")

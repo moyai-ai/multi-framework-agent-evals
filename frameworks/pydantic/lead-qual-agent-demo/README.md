@@ -45,7 +45,7 @@ Inspired by the [Slack Lead Qualifier example](https://ai.pydantic.dev/examples/
 
 1. Install dependencies using uv:
 ```bash
-unset VIRTUAL_ENV && uv sync
+unset VIRTUAL_ENV && uv sync --extra dev
 ```
 
 Get your API keys:
@@ -179,10 +179,10 @@ unset VIRTUAL_ENV && uv run --env-file .env python src/run_scenario.py all
 **Testing without API keys:**
 ```bash
 # Test imports and basic functionality
-uv run python src/test_scenario.py
+unset VIRTUAL_ENV && uv run python src/test_scenario.py
 
 # Test demo displays with mock data (no API calls)
-uv run python src/test_demo_structure.py
+unset VIRTUAL_ENV && uv run python src/test_demo_structure.py
 ```
 
 ### Method 2: Interactive Menu
@@ -335,16 +335,13 @@ The project includes comprehensive unit tests:
 
 ```bash
 # Run all tests
-uv run pytest
-
-# Run with coverage
-uv run pytest --cov=src
+unset VIRTUAL_ENV && uv run pytest
 
 # Run specific test file
-uv run pytest tests/test_lead_qualifier.py
+unset VIRTUAL_ENV && uv run pytest tests/test_lead_qualifier.py
 
 # Run tests with verbose output
-uv run pytest -v
+unset VIRTUAL_ENV && uv run pytest -v
 ```
 
 Test coverage includes:
