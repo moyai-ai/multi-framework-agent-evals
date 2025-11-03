@@ -195,12 +195,12 @@ async def search_linkup(
 
 # Create the Pydantic AI Tool object
 linkup_search_tool = Tool(
-    function=search_linkup,
+    search_linkup,
     name="search_linkup",
     description="""Search the web using Linkup.so API to find information about people, companies, or topics.
-    Use 'standard' search for quick results, or 'summary' for AI-summarized content.""",
-    parameters={
-        "query": "The search query string",
-        "search_type": "Type of search - 'standard' or 'summary' (default: 'standard')"
-    }
+    Use 'standard' search for quick results, or 'summary' for AI-summarized content.
+
+    Args:
+        query: The search query string
+        search_type: Type of search - 'standard' or 'summary' (default: 'standard')"""
 )

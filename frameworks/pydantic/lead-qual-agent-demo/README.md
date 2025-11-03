@@ -59,7 +59,7 @@ Get your API keys:
 Run the main demo application:
 
 ```bash
-uv run python src/main.py
+unset VIRTUAL_ENV && uv run python src/main.py
 ```
 
 This provides an interactive menu with options to:
@@ -157,6 +157,9 @@ Compares qualification results across different lead types:
 Run specific scenarios directly from the command line:
 
 ```bash
+# Show available scenarios
+uv run python src/run_scenario.py
+
 # Run single lead qualification
 uv run python src/run_scenario.py single
 
@@ -169,11 +172,17 @@ uv run python src/run_scenario.py priority
 # Run scenario comparison
 uv run python src/run_scenario.py comparison
 
-# Run all demos
+# Run all demos sequentially
 uv run python src/run_scenario.py all
+```
 
-# Show available options
-uv run python src/run_scenario.py
+**Testing without API keys:**
+```bash
+# Test imports and basic functionality
+uv run python src/test_scenario.py
+
+# Test demo displays with mock data (no API calls)
+uv run python src/test_demo_structure.py
 ```
 
 ### Method 2: Interactive Menu

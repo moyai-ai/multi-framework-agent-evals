@@ -2,7 +2,7 @@
 """Direct scenario runner for lead qualification demos.
 
 Usage:
-    uv run python src/run_scenario.py [scenario_name]
+    uv run python -m src.run_scenario [scenario_name]
 
 Available scenarios:
     single      - Run single lead qualification demo
@@ -14,8 +14,13 @@ Available scenarios:
 
 import asyncio
 import sys
-from scenarios.demo_runner import DemoRunner
-from scenarios.sample_leads import get_sample_leads
+import os
+
+# Add the parent directory to the path to fix imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.scenarios.demo_runner import DemoRunner
+from src.scenarios.sample_leads import get_sample_leads
 
 
 async def main():
