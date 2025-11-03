@@ -36,28 +36,23 @@ Inspired by the [Slack Lead Qualifier example](https://ai.pydantic.dev/examples/
 
 ### Prerequisites
 
-- Python 3.10 or higher
+- Python 3.11 or higher
+- [uv](https://github.com/astral-sh/uv) package manager
 - OpenAI API key
 - Linkup.so API key (for web search capabilities)
 
 ### Setup
 
-1. Clone the repository:
+1. Install dependencies using uv:
 ```bash
-git clone <repository-url>
-cd frameworks/pydantic/lead-qual-agent-demo
+unset VIRTUAL_ENV && uv sync
 ```
 
-2. Install dependencies:
+2. Set up environment variables:
 ```bash
-pip install -e .
-```
-
-3. Set up environment variables:
-```bash
-# Create a .env file
-echo "OPENAI_API_KEY=your-openai-api-key" > .env
-echo "LINKUP_API_KEY=your-linkup-api-key" >> .env
+# Copy the example file and edit with your API keys
+cp env.example .env
+# Then edit .env with your actual API keys
 ```
 
 Get your API keys:
@@ -71,7 +66,7 @@ Get your API keys:
 Run the main demo application:
 
 ```bash
-python src/main.py
+uv run python src/main.py
 ```
 
 This provides an interactive menu with options to:
@@ -168,16 +163,16 @@ The project includes comprehensive unit tests:
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run with coverage
-pytest --cov=src
+uv run pytest --cov=src
 
 # Run specific test file
-pytest tests/test_lead_qualifier.py
+uv run pytest tests/test_lead_qualifier.py
 
 # Run tests with verbose output
-pytest -v
+uv run pytest -v
 ```
 
 Test coverage includes:
@@ -283,18 +278,22 @@ The agent generates specific talking points based on the lead's profile:
    - Ensure both OPENAI_API_KEY and LINKUP_API_KEY are set
    - Check .env file is in the correct directory
 
-2. **Rate Limiting**
+2. **Import Errors**
+   - Run `unset VIRTUAL_ENV && uv sync` to install dependencies
+   - Ensure Python 3.11+ is installed
+
+3. **Rate Limiting**
    - The agent includes retry logic for API calls
    - Consider using batch processing with delays for large datasets
 
-3. **Timeout Errors**
+4. **Timeout Errors**
    - Increase timeout in LinkupSearchTool initialization
    - Default is 30 seconds, can be increased for complex searches
 
 ## Contributing
 
 Contributions are welcome! Please ensure:
-- All tests pass (`pytest`)
+- All tests pass (`uv run pytest`)
 - Code follows the existing style
 - New features include appropriate tests
 - Documentation is updated accordingly
