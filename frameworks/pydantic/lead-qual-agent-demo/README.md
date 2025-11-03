@@ -158,22 +158,22 @@ Run specific scenarios directly from the command line:
 
 ```bash
 # Show available scenarios
-uv run python src/run_scenario.py
+unset VIRTUAL_ENV && uv run python src/run_scenario.py
 
 # Run single lead qualification
-uv run python src/run_scenario.py single
+unset VIRTUAL_ENV && uv run --env-file .env python src/run_scenario.py single
 
 # Run batch processing demo
-uv run python src/run_scenario.py batch
+unset VIRTUAL_ENV && uv run --env-file .env python src/run_scenario.py batch
 
 # Run priority ranking demo
-uv run python src/run_scenario.py priority
+unset VIRTUAL_ENV && uv run --env-file .env python src/run_scenario.py priority
 
 # Run scenario comparison
-uv run python src/run_scenario.py comparison
+unset VIRTUAL_ENV && uv run --env-file .env python src/run_scenario.py comparison
 
 # Run all demos sequentially
-uv run python src/run_scenario.py all
+unset VIRTUAL_ENV && uv run --env-file .env python src/run_scenario.py all
 ```
 
 **Testing without API keys:**

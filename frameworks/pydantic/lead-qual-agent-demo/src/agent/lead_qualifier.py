@@ -5,7 +5,6 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import uuid
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIModel
 
 from .models import (
     Lead,
@@ -44,10 +43,11 @@ class LeadQualificationAgent:
 
         # Create the Pydantic AI agent
         self.agent = Agent(
-            model=OpenAIModel(model),
+            model=f"openai:{model}",
             system_prompt=self._get_system_prompt(),
             tools=[linkup_search_tool],
-            result_type=QualificationAnalysis
+            output_type=QualificationAnalysis,
+            deps_type=dict  # We'll pass deps as a dict
         )
 
     def _get_system_prompt(self) -> str:
@@ -107,8 +107,8 @@ class LeadQualificationAgent:
         # Generate a unique lead ID if not provided
         lead_id = str(uuid.uuid4())
 
-        # Prepare the context for the agent
-        agent_context = {
+        # Prepare the deps for the agent
+        agent_deps = {
             "search_tool": self.search_tool,
             "lead_id": lead_id,
             **(context or {})
@@ -129,13 +129,16 @@ class LeadQualificationAgent:
         potential need for developer tools and AI/ML platforms."""
 
         # Run the agent
-        result = await self.agent.run(prompt, context=agent_context)
+        result = await self.agent.run(prompt, deps=agent_deps)
+
+        # Access the data from the result
+        qualification = result.data
 
         # Set the lead_id in the result
-        if result.data:
-            result.data.lead_id = lead_id
+        if qualification:
+            qualification.lead_id = lead_id
 
-        return result.data
+        return qualification
 
     async def qualify_batch(
         self,

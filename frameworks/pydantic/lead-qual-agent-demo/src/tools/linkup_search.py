@@ -151,7 +151,6 @@ class LinkupSearchTool(BaseModel):
 
 # Create the Pydantic AI tool function
 async def search_linkup(
-    ctx,
     query: str,
     search_type: str = "standard"
 ) -> str:
@@ -165,10 +164,12 @@ async def search_linkup(
     Returns:
         Formatted string with search results or summary
     """
-    # Get the search tool from context if available
-    search_tool = ctx.get("search_tool")
-    if not search_tool:
+    # Create search tool
+    try:
         search_tool = LinkupSearchTool()
+    except Exception as e:
+        # If API key is missing, return a mock response for testing
+        return f"[Search unavailable: {e}] Mock results for query: {query}"
 
     if search_type == "summary":
         result = await search_tool.search_with_summary(query)
