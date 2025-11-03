@@ -42,7 +42,7 @@ User Request → Agent Selection → Tool Execution → Context Update → Respo
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.12+
 - uv package manager
 - OpenAI API key (or compatible LLM provider)
 
@@ -50,7 +50,7 @@ User Request → Agent Selection → Tool Execution → Context Update → Respo
 
 1. Install dependencies using uv:
 ```bash
-uv sync --dev
+unset VIRTUAL_ENV && uv sync --dev
 ```
 
 2. Add your OpenAI API key to `.env`:
@@ -139,7 +139,7 @@ Tools used: get_account_balance
 pydantic-ai/
 ├── pyproject.toml              # Project configuration and dependencies
 ├── README.md                   # This documentation
-├── .python-version            # Python version specification (3.9)
+├── .python-version            # Python version specification (3.12)
 ├── .env.example               # Environment variables template
 ├── src/
 │   ├── __init__.py
