@@ -1,0 +1,57 @@
+name: OpenAI Agents SDK Financial Research Agent
+
+on:
+  # Allow manual triggering only
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests and Scenarios
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frameworks/openai-agents-sdk/financial-research-agents-demo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Create virtual environment and install dependencies
+        run: |
+          unset VIRTUAL_ENV
+          uv sync
+
+      - name: Run pytest
+        run: |
+          unset VIRTUAL_ENV
+          uv run pytest
+
+      - name: Run all scenarios
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          unset VIRTUAL_ENV
+          uv run python -m src.runner --all-scenarios
+
+      - name: Upload scenario reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scenario-reports
+          path: frameworks/openai-agents-sdk/financial-research-agents-demo/reports/
+          retention-days: 3
+
+      - name: Check for critical failures
+        if: failure()
+        run: |
+          echo "Tests or scenarios failed. Please review the logs above."
+          exit 1

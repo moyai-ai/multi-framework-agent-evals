@@ -315,12 +315,13 @@ class TestScenarioFiles:
             assert scenario.expectations is not None
 
 
+@pytest.mark.integration
 class TestIntegration:
     """Integration tests for the complete system."""
 
     @pytest.mark.skipif(
-        not os.environ.get("OPENAI_API_KEY"),
-        reason="Requires OPENAI_API_KEY to be set"
+        not os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY").startswith("test-key"),
+        reason="Requires valid OPENAI_API_KEY to be set"
     )
     def test_simple_research_flow(self):
         """Test a simple research flow with real API calls."""

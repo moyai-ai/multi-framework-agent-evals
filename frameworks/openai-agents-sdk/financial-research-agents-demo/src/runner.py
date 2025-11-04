@@ -287,7 +287,13 @@ async def main():
     )
     parser.add_argument(
         'scenario_file',
+        nargs='?',
         help='Path to the scenario JSON file'
+    )
+    parser.add_argument(
+        '--all-scenarios',
+        action='store_true',
+        help='Run all scenario files in the src/scenarios directory'
     )
     parser.add_argument(
         '--verbose', '-v',
@@ -296,7 +302,7 @@ async def main():
     )
     parser.add_argument(
         '--output', '-o',
-        help='Path to save the execution report'
+        help='Path to save the execution report(s)'
     )
 
     args = parser.parse_args()
@@ -307,9 +313,78 @@ async def main():
         print("Usage: uv run --env-file .env python -m src.runner <scenario_file>")
         sys.exit(1)
 
-    # Create runner and load scenario
+    # Create runner
     runner = ScenarioRunner(verbose=args.verbose)
 
+    # Handle --all-scenarios flag
+    if args.all_scenarios:
+        scenarios_dir = Path("src/scenarios")
+        scenario_files = sorted(scenarios_dir.glob("*.json"))
+
+        if not scenario_files:
+            print(f"No scenario files found in {scenarios_dir}")
+            sys.exit(1)
+
+        print(f"Found {len(scenario_files)} scenario file(s):")
+        for file in scenario_files:
+            print(f"  - {file.name}")
+        print()
+
+        # Run all scenario files
+        all_reports = []
+        all_success = True
+
+        for scenario_file in scenario_files:
+            print(f"\n{'='*60}")
+            print(f"Running scenario from: {scenario_file.name}")
+            print(f"{'='*60}\n")
+
+            try:
+                scenario = runner.load_scenario(str(scenario_file))
+                report = await runner.run_scenario(scenario)
+                all_reports.append(report)
+
+                if not report.overall_success:
+                    all_success = False
+
+                # Save individual report
+                if args.output:
+                    # Use output as directory for multiple reports
+                    output_dir = Path(args.output)
+                else:
+                    # Default output directory
+                    output_dir = Path("reports")
+
+                output_dir.mkdir(parents=True, exist_ok=True)
+                output_file = output_dir / f"report_{scenario.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+                runner.save_report(report, str(output_file))
+
+            except Exception as e:
+                print(f"Error running scenario from {scenario_file.name}: {e}")
+                import traceback
+                traceback.print_exc()
+                all_success = False
+
+        # Print summary
+        print(f"\n{'='*60}")
+        print("ALL SCENARIOS SUMMARY")
+        print(f"{'='*60}")
+        print(f"Total scenarios: {len(all_reports)}")
+        passed = sum(1 for r in all_reports if r.overall_success)
+        failed = len(all_reports) - passed
+        print(f"Passed: {passed}")
+        print(f"Failed: {failed}")
+        print(f"Success rate: {passed/len(all_reports):.1%}" if all_reports else "N/A")
+        print(f"{'='*60}\n")
+
+        # Exit with appropriate code
+        sys.exit(0 if all_success else 1)
+
+    # Require scenario_file if --all-scenarios is not specified
+    if not args.scenario_file:
+        parser.error("the following arguments are required: scenario_file (unless --all-scenarios is used)")
+
+    # Load and run single scenario
     try:
         scenario = runner.load_scenario(args.scenario_file)
     except Exception as e:
@@ -325,13 +400,16 @@ async def main():
         traceback.print_exc()
         sys.exit(1)
 
-    # Save report if requested
+    # Save report
     if args.output:
-        runner.save_report(report, args.output)
+        output_path = args.output
     else:
-        # Default output path
-        output_path = f"report_{scenario.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        runner.save_report(report, output_path)
+        # Default output directory
+        output_dir = Path("reports")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = str(output_dir / f"report_{scenario.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+
+    runner.save_report(report, output_path)
 
     # Exit with appropriate code
     sys.exit(0 if report.overall_success else 1)

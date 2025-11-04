@@ -39,6 +39,20 @@ def configure_logging():
     root_logger.handlers = original_handlers
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_environment():
+    """
+    Automatically set up test environment for unit tests.
+
+    For unit tests, sets a mock API key if one isn't already present.
+    Integration tests should set OPENAI_API_KEY in their environment.
+    """
+    if not os.environ.get("OPENAI_API_KEY"):
+        os.environ["OPENAI_API_KEY"] = "test-key-12345-mock-for-unit-tests"
+
+    yield
+
+
 @pytest.fixture
 def mock_openai_api_key(monkeypatch):
     """Mock OpenAI API key for testing."""

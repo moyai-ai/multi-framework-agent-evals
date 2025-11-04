@@ -47,12 +47,7 @@ User Query
 
 ## Installation
 
-1. Clone the repository and navigate to the project:
-```bash
-cd frameworks/openai-agents-sdk/financial-research-agents-demo
-```
-
-2. Install dependencies with uv:
+1. Install dependencies with uv:
 ```bash
 unset VIRTUAL_ENV && uv sync
 ```
@@ -80,36 +75,39 @@ unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/c
 
 Run all scenarios:
 ```bash
-for scenario in src/scenarios/*.json; do
-    unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner "$scenario" --verbose
-done
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner --all-scenarios --verbose
 ```
 
 ### Running Tests with Pytest
 
-Run all tests:
+**Unit tests**:
 ```bash
-unset VIRTUAL_ENV && uv run --env-file .env pytest tests/ -v
+# Run all unit tests
+unset VIRTUAL_ENV && uv run pytest
+
+# Run specific test classes
+unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::TestContext -v
+unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::TestAgents -v
+unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::TestTools -v
+unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::TestScenarioRunner -v
 ```
 
-Run specific test categories:
+**Integration tests** (requires valid API key):
 ```bash
-# Unit tests only
-pytest tests/test_agents.py::TestContext -v
-pytest tests/test_agents.py::TestAgents -v
-pytest tests/test_agents.py::TestTools -v
+# Run integration tests
+unset VIRTUAL_ENV && uv run --env-file .env pytest -m integration -v
 
-# Integration tests (requires API key)
-unset VIRTUAL_ENV && uv run --env-file .env pytest tests/test_agents.py::TestIntegration -v
+# Run specific integration test
+unset VIRTUAL_ENV && uv run --env-file .env pytest tests/test_agents.py::TestIntegration::test_simple_research_flow -v
 
 # Full scenario tests (requires API key and flag)
 unset VIRTUAL_ENV && RUN_FULL_SCENARIOS=1 uv run --env-file .env pytest tests/test_agents.py::TestIntegration::test_full_scenarios -v
 ```
 
-<!-- Run with coverage:
+**All tests** (unit + integration):
 ```bash
-pytest tests/ --cov=src --cov-report=html -v
-``` -->
+unset VIRTUAL_ENV && uv run --env-file .env pytest -m tests/ -v
+```
 
 ## Scenario JSON Format
 
@@ -161,7 +159,7 @@ financial-research-agents-demo/
 │   └── test_agents.py      # Comprehensive test suite
 ├── pyproject.toml
 ├── README.md
-└── .env.example
+└── .env
 ```
 
 ## Key Features
@@ -209,68 +207,6 @@ writer_agent = Agent(
     tools=[company_financials_tool, risk_analysis_tool]
 )
 ```
-
-## Example Execution
-
-```bash
-$ unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "Analyze Apple Inc Q4 2024"
-
-============================================================
-Financial Research: Analyze Apple Inc Q4 2024
-============================================================
-
-📋 Step 1: Planning search strategy...
-Generated 4 search terms
-  • Apple Inc Q4 2024 earnings results
-  • Apple iPhone revenue trends 2024
-  • Apple services business growth
-  • Apple competitive position smartphones
-
-🔍 Step 2: Executing searches...
-  ✓ Apple Inc Q4 2024 earnings results
-  ✓ Apple iPhone revenue trends 2024
-  ✓ Apple services business growth
-  ✓ Apple competitive position smartphones
-Completed 4 searches
-
-📝 Step 3: Writing comprehensive report...
-
-✓ Step 4: Verifying report quality...
-
-============================================================
-FINAL REPORT
-============================================================
-
-# Apple Inc Financial Analysis
-
-## Executive Summary
-
-Apple Inc demonstrated strong financial performance in Q4 2024...
-
-[Full report content]
-
-============================================================
-FOLLOW-UP QUESTIONS
-============================================================
-
-1. What is Apple's timeline for custom AI chip development?
-2. How will the Services revenue scale in emerging markets?
-
-============================================================
-VERIFICATION RESULTS
-============================================================
-
-Status: PASSED
-
-✅ Research completed in 45.3 seconds
-```
-
-## Testing Best Practices
-
-1. **Unit Tests**: Test individual components (context, tools, agents)
-2. **Integration Tests**: Test agent interactions with mocked API
-3. **Scenario Tests**: Run full workflows with real API calls
-4. **Performance Tests**: Ensure operations meet speed thresholds
 
 ## Environment Variables
 
@@ -341,48 +277,3 @@ This demo uses mock financial data for testing purposes. In production:
    - Check API key is valid
    - Ensure you're using compatible OpenAI models
    - Review scenario expectations match actual behavior
-
-## Performance Metrics
-
-The system tracks:
-- Total execution time
-- Search execution time (concurrent)
-- Report generation time
-- Verification time
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass: `pytest tests/ -v`
-5. Submit a pull request
-
-## Comparison with cs-agents-demo
-
-This project adapts patterns from the `cs-agents-demo`:
-
-**Similarities:**
-- ✅ uv for dependency management
-- ✅ pytest for testing
-- ✅ JSON-based scenarios
-- ✅ Scenario runner pattern
-- ✅ Comprehensive test coverage
-
-**Differences:**
-- 🔄 Linear workflow vs handoff-based routing
-- 🔄 Manager orchestration layer
-- 🔄 Concurrent search execution
-- 🔄 Analyst-as-tool pattern
-- 🔄 Financial domain vs customer service
-
-## License
-
-This project is provided as a demonstration of the OpenAI Agents SDK capabilities.
-
-## Support
-
-For issues and questions:
-- Check test output for detailed error messages
-- Review scenario JSON for validation expectations
-- Ensure all dependencies are installed with `uv sync`
