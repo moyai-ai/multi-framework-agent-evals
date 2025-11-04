@@ -1,0 +1,13 @@
+{
+  "name": "Code Generation",
+  "description": "Test code generation capability",
+  "prompt": "Write a Python function that calculates the factorial of a number.",
+  "options": {
+    "max_turns": 1
+  },
+  "expected": {
+    "message_contains": ["def", "factorial"],
+    "has_text_response": true,
+    "tools_called": []
+  }
+}

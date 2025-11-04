@@ -1,0 +1,11 @@
+{
+  "name": "Basic Query - Math",
+  "description": "Test basic query without options",
+  "prompt": "What is 2 + 2?",
+  "options": null,
+  "expected": {
+    "message_contains": ["4"],
+    "has_text_response": true,
+    "tools_called": []
+  }
+}

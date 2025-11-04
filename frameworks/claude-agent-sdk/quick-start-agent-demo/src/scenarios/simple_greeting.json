@@ -1,0 +1,10 @@
+{
+  "name": "Simple Greeting",
+  "description": "Test conversational response",
+  "prompt": "Hello! How are you?",
+  "options": null,
+  "expected": {
+    "has_text_response": true,
+    "tools_called": []
+  }
+}

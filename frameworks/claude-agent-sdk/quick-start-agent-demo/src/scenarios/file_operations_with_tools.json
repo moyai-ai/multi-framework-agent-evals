@@ -1,0 +1,14 @@
+{
+  "name": "File Operations with Tools",
+  "description": "Test using Read and Write tools",
+  "prompt": "Create a file called /tmp/claude_agent_demo/scenario_test.txt with the content 'Test content' and then read it back.",
+  "options": {
+    "allowed_tools": ["Read", "Write"],
+    "max_turns": 5
+  },
+  "expected": {
+    "message_contains": ["Test content"],
+    "has_text_response": true,
+    "tools_called": ["Write", "Read"]
+  }
+}

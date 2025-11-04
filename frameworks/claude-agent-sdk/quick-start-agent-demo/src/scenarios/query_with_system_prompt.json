@@ -1,0 +1,14 @@
+{
+  "name": "Query with System Prompt",
+  "description": "Test query with custom system prompt",
+  "prompt": "What is 2 + 2?",
+  "options": {
+    "system_prompt": "You are a helpful math tutor. Explain your reasoning step by step.",
+    "max_turns": 1
+  },
+  "expected": {
+    "message_contains": ["4"],
+    "has_text_response": true,
+    "tools_called": []
+  }
+}
