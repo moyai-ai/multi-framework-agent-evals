@@ -572,7 +572,13 @@ async def main():
     parser = argparse.ArgumentParser(description="Run analysis scenarios")
     parser.add_argument(
         "input",
+        nargs="?",
         help="Path to scenario JSON file or directory containing scenarios",
+    )
+    parser.add_argument(
+        "--all-scenarios",
+        action="store_true",
+        help="Run all scenario files in the src/scenarios directory",
     )
     parser.add_argument(
         "--output",
@@ -588,6 +594,46 @@ async def main():
 
     # Create runner
     runner = ScenarioRunner(verbose=not args.quiet)
+
+    # Handle --all-scenarios flag
+    if args.all_scenarios:
+        scenarios_dir = Path("src/scenarios")
+        scenario_files = sorted(scenarios_dir.glob("*.json"))
+
+        if not scenario_files:
+            print(f"No scenario files found in {scenarios_dir}")
+            sys.exit(1)
+
+        print(f"Found {len(scenario_files)} scenario file(s):")
+        for file in scenario_files:
+            print(f"  - {file.name}")
+        print()
+
+        # Run all scenario files
+        all_results = []
+        for scenario_file in scenario_files:
+            print(f"\n{'='*60}")
+            print(f"Running scenarios from: {scenario_file.name}")
+            print(f"{'='*60}\n")
+
+            try:
+                results = await runner.run_scenarios_from_file(str(scenario_file))
+                all_results.extend(results)
+            except Exception as e:
+                print(f"Error running scenarios from {scenario_file.name}: {e}")
+
+        # Print combined summary
+        runner.print_summary()
+
+        # Save results
+        if args.output:
+            runner.save_results(args.output)
+
+        return
+
+    # Require input path if --all-scenarios is not specified
+    if not args.input:
+        parser.error("the following arguments are required: input (unless --all-scenarios is used)")
 
     # Determine if input is file or directory
     input_path = Path(args.input)

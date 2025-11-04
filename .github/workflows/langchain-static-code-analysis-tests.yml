@@ -1,0 +1,71 @@
+name: Langchain Static Code Analysis Agent
+
+on:
+  # Allow manual triggering only
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests and Scenarios
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frameworks/langchain/static-code-analysis-agent-demo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Create virtual environment and install dependencies
+        run: |
+          unset VIRTUAL_ENV
+          uv sync
+
+      - name: Run pytest with mock OpenGrep
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          USE_MOCK_OPENGREP: "true"
+        run: |
+          unset VIRTUAL_ENV
+          uv run pytest
+
+      - name: Install OpenGrep
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/opengrep/opengrep/main/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Verify OpenGrep installation
+        run: |
+          which opengrep || echo "OpenGrep not found in PATH"
+          opengrep --version || echo "OpenGrep version check failed"
+
+      - name: Run all scenarios with real OpenGrep
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          USE_MOCK_OPENGREP: "false"
+        run: |
+          unset VIRTUAL_ENV
+          uv run python -m src.runner --all-scenarios
+
+      - name: Upload scenario reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scenario-reports
+          path: frameworks/langchain/static-code-analysis-agent-demo/reports/
+          retention-days: 3
+
+      - name: Check for critical failures
+        if: failure()
+        run: |
+          echo "Tests or scenarios failed. Please review the logs above."
+          exit 1

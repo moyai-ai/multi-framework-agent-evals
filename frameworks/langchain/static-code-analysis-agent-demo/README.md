@@ -128,6 +128,9 @@ unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "https://githu
 Execute predefined analysis scenarios with real OpenGrep:
 
 ```bash
+# Run all scenarios in the src/scenarios directory (recommended)
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner --all-scenarios
+
 # Run a single scenario file (uses real OpenGrep if installed)
 unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/security_vulnerabilities.json
 
@@ -135,10 +138,10 @@ unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/s
 unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/
 
 # Run quietly (suppress verbose output)
-unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/ --quiet
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner --all-scenarios --quiet
 
 # Run with mock OpenGrep (if OpenGrep not installed or for testing)
-USE_MOCK_OPENGREP=true unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/
+USE_MOCK_OPENGREP=true unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner --all-scenarios
 ```
 
 **OpenGrep Behavior:**
@@ -177,19 +180,19 @@ asyncio.run(main())
 
 ```bash
 # Run all tests (automatically uses mock OpenGrep)
-unset VIRTUAL_ENV && uv run pytest tests/ -v
+unset VIRTUAL_ENV && uv run pytest
+
+# Run with verbose output
+unset VIRTUAL_ENV && uv run pytest -v
 
 # Run specific test file
 unset VIRTUAL_ENV && uv run pytest tests/test_agent.py -v
 
 # Run only unit tests (agent tests, fast)
-unset VIRTUAL_ENV && uv run pytest tests/ -m unit -v
+unset VIRTUAL_ENV && uv run pytest -m unit -v
 
 # Run only scenario tests (slower, tests scenario execution)
-unset VIRTUAL_ENV && uv run pytest tests/ -m scenario -v
-
-# Run unit tests only (excludes scenarios)
-unset VIRTUAL_ENV && uv run pytest tests/test_agent.py -v
+unset VIRTUAL_ENV && uv run pytest -m scenario -v
 ```
 
 ### Test Categories
@@ -205,7 +208,7 @@ unset VIRTUAL_ENV && uv run pytest tests/test_agent.py -v
   - Expectation validation
   - Results handling and reporting
 
-**Note:** All unit tests automatically use mock OpenGrep regardless of your environment settings. This is configured in `tests/conftest.py` to ensure tests run quickly and don't require external tools.
+**Note:** All tests automatically use mock OpenGrep regardless of your environment settings. This is configured in `tests/conftest.py` to ensure tests run quickly and don't require external tools.
 
 ## Scenario Format
 
@@ -262,7 +265,6 @@ static-code-analysis-agent-demo/
 │   ├── test_agent.py       # Agent tests
 │   └── test_tools.py       # Tool tests
 ├── pyproject.toml          # Project configuration
-├── .env.example            # Environment template
 ├── .gitignore             # Git ignore rules
 └── README.md              # This file
 ```
