@@ -1,4 +1,4 @@
-name: Google ADK Code Debug Agent Tests
+name: Google ADK Code Debug Agent
 
 on:
   # Allow manual triggering only
@@ -24,9 +24,6 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          cache-dependency-glob: "frameworks/google-adk/code-debug-agent-demo/uv.lock"
 
       - name: Create virtual environment and install dependencies
         run: |
@@ -39,7 +36,7 @@ jobs:
           STACKEXCHANGE_API_KEY: ${{ secrets.STACKEXCHANGE_API_KEY }}
         run: |
           unset VIRTUAL_ENV
-          uv run pytest -v
+          uv run pytest
 
       - name: Run all scenarios
         env:
@@ -55,7 +52,7 @@ jobs:
         with:
           name: scenario-reports
           path: frameworks/google-adk/code-debug-agent-demo/reports/
-          retention-days: 30
+          retention-days: 3
 
       - name: Check for critical failures
         if: failure()
