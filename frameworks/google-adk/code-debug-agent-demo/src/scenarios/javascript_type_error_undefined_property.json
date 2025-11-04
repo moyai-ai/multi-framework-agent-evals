@@ -1,0 +1,18 @@
+{
+  "name": "JavaScript TypeError - Undefined Property",
+  "description": "Common JavaScript error when accessing undefined properties",
+  "error_message": "TypeError: Cannot read property 'map' of undefined",
+  "programming_language": "javascript",
+  "framework": "react",
+  "conversation": [
+    {
+      "user_input": "My React component throws: TypeError: Cannot read property 'map' of undefined",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["undefined", "map", "array", "initial state", "conditional rendering"]
+    }
+  ],
+  "metadata": {
+    "difficulty": "medium",
+    "category": "runtime_error"
+  }
+}

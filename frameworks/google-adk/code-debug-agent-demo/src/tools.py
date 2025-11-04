@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 async def search_stack_exchange_for_error(
     error_message: str,
-    programming_language: Optional[str] = None,
-    framework: Optional[str] = None,
-    include_solutions: bool = True,
-    max_results: int = 5
+    programming_language: Optional[str],
+    framework: Optional[str],
+    include_solutions: bool,
+    max_results: int
 ) -> str:
     """Search Stack Exchange for solutions to a specific error message.
 
@@ -33,6 +33,12 @@ async def search_stack_exchange_for_error(
         JSON string containing search results with questions and their top answers
     """
     try:
+        # Handle default values
+        if max_results is None:
+            max_results = 5
+        if include_solutions is None:
+            include_solutions = True
+
         async with StackExchangeService() as service:
             results = await service.search_similar_errors(
                 error_message=error_message,
@@ -91,11 +97,11 @@ async def search_stack_exchange_for_error(
 
 async def search_stack_exchange_general(
     query: str,
-    site: str = "stackoverflow",
-    tags: Optional[List[str]] = None,
-    sort_by: str = "relevance",
-    has_accepted_answer: Optional[bool] = None,
-    max_results: int = 10
+    site: Optional[str],
+    tags: Optional[List[str]],
+    sort_by: Optional[str],
+    has_accepted_answer: Optional[bool],
+    max_results: Optional[int]
 ) -> str:
     """General search on Stack Exchange for programming questions.
 
@@ -114,6 +120,14 @@ async def search_stack_exchange_general(
         JSON string containing search results
     """
     try:
+        # Handle default values
+        if site is None:
+            site = "stackoverflow"
+        if sort_by is None:
+            sort_by = "relevance"
+        if max_results is None:
+            max_results = 10
+
         async with StackExchangeService() as service:
             results = await service.search_questions(
                 query=query,
@@ -171,8 +185,8 @@ async def search_stack_exchange_general(
 
 async def get_stack_exchange_answers(
     question_id: int,
-    site: str = "stackoverflow",
-    max_answers: int = 3
+    site: Optional[str],
+    max_answers: Optional[int]
 ) -> str:
     """Get detailed answers for a specific Stack Exchange question.
 
@@ -188,6 +202,12 @@ async def get_stack_exchange_answers(
         JSON string containing the answers with full content
     """
     try:
+        # Handle default values
+        if site is None:
+            site = "stackoverflow"
+        if max_answers is None:
+            max_answers = 3
+
         async with StackExchangeService() as service:
             results = await service.get_answers(
                 question_id=question_id,
@@ -232,9 +252,9 @@ async def get_stack_exchange_answers(
 
 async def analyze_error_and_suggest_fix(
     error_message: str,
-    code_context: Optional[str] = None,
-    file_type: Optional[str] = None,
-    search_limit: int = 3
+    code_context: Optional[str],
+    file_type: Optional[str],
+    search_limit: Optional[int]
 ) -> str:
     """Analyze an error message and suggest fixes based on Stack Exchange solutions.
 
@@ -251,6 +271,10 @@ async def analyze_error_and_suggest_fix(
         JSON string containing error analysis and suggested fixes
     """
     try:
+        # Handle default values
+        if search_limit is None:
+            search_limit = 3
+
         # Determine programming language from file type
         language_map = {
             "py": "python",

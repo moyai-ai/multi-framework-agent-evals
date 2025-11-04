@@ -8,6 +8,13 @@ import httpx
 from bs4 import BeautifulSoup
 import asyncio
 from datetime import datetime
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +32,7 @@ class StackExchangeService:
         """
         self.api_key = api_key or os.getenv("STACKEXCHANGE_API_KEY")
         self.client = httpx.AsyncClient(timeout=30.0)
+        self._rate_limit_delay = 0.5  # 500ms between requests to avoid rate limiting
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -32,7 +40,41 @@ class StackExchangeService:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
-        await self.client.aclose()
+        await self.close()
+
+    async def close(self):
+        """Explicitly close the HTTP client."""
+        if self.client and not self.client.is_closed:
+            await self.client.aclose()
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type((httpx.HTTPStatusError, httpx.TimeoutException, httpx.ConnectError)),
+        before_sleep=before_sleep_log(logger, logging.WARNING)
+    )
+    async def _make_api_request(self, endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Make an API request with retry logic and rate limiting.
+
+        Args:
+            endpoint: API endpoint path
+            params: Query parameters
+
+        Returns:
+            JSON response data
+
+        Raises:
+            httpx.HTTPStatusError: If the request fails after retries
+        """
+        # Add rate limiting delay
+        await asyncio.sleep(self._rate_limit_delay)
+
+        response = await self.client.get(
+            f"{self.BASE_URL}{endpoint}",
+            params=params
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def search_questions(
         self,
@@ -77,13 +119,7 @@ class StackExchangeService:
             if accepted is not None:
                 params["accepted"] = "true" if accepted else "false"
 
-            response = await self.client.get(
-                f"{self.BASE_URL}/search/advanced",
-                params=params
-            )
-            response.raise_for_status()
-
-            data = response.json()
+            data = await self._make_api_request("/search/advanced", params)
 
             # Process and format results
             results = []
@@ -163,13 +199,7 @@ class StackExchangeService:
             if self.api_key:
                 params["key"] = self.api_key
 
-            response = await self.client.get(
-                f"{self.BASE_URL}/questions/{question_id}/answers",
-                params=params
-            )
-            response.raise_for_status()
-
-            data = response.json()
+            data = await self._make_api_request(f"/questions/{question_id}/answers", params)
 
             # Process answers
             answers = []

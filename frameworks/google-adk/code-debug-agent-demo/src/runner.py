@@ -3,10 +3,16 @@
 import json
 import asyncio
 import logging
+import warnings
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
+
+# Suppress known warnings from dependencies
+warnings.filterwarnings("ignore", message="Support for google-cloud-storage < 3.0.0.*", category=FutureWarning)
+warnings.filterwarnings("ignore", message="Default value is not supported in function declaration.*", category=Warning)
+warnings.filterwarnings("ignore", message=".*@model_validator.*mode='after'.*", category=DeprecationWarning)
 
 from google.adk.runners import InMemoryRunner
 from src.agents import get_initial_agent, get_agent_by_name, list_agents
@@ -47,6 +53,19 @@ class ScenarioReport:
     errors: List[str]
     validation_results: Dict[str, bool]
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the report to a dictionary for JSON serialization."""
+        return {
+            "scenario_name": self.scenario_name,
+            "success": self.success,
+            "execution_time": self.execution_time,
+            "tools_used": self.tools_used,
+            "messages": self.messages,
+            "errors": self.errors,
+            "validation_results": self.validation_results,
+            "timestamp": datetime.now().isoformat()
+        }
+
 
 class ScenarioRunner:
     """Runner for executing debugging scenarios."""
@@ -65,7 +84,7 @@ class ScenarioRunner:
         """Set up the runner and session."""
         self.runner = InMemoryRunner(
             agent=self.agent,
-            app_name="code-debug-agent"
+            app_name=self.agent.name
         )
         self.session = await self.runner.session_service.create_session(
             app_name=self.runner.app_name,
@@ -150,7 +169,7 @@ class ScenarioRunner:
             if hasattr(event, 'content'):
                 if hasattr(event.content, 'parts'):
                     for part in event.content.parts:
-                        if hasattr(part, 'text'):
+                        if hasattr(part, 'text') and part.text is not None:
                             messages.append(part.text)
 
             if hasattr(event, 'tool_calls'):
@@ -158,8 +177,8 @@ class ScenarioRunner:
                     tools_called.append(tool_call.function.name)
                     report.tools_used.append(tool_call.function.name)
 
-        # Store messages
-        full_response = "\n".join(messages)
+        # Store messages (filter out any None values just in case)
+        full_response = "\n".join(msg for msg in messages if msg is not None)
         report.messages.append(full_response)
 
         # Validate expectations
@@ -185,11 +204,12 @@ class ScenarioRunner:
             )
             report.validation_results[f"links_{len(report.validation_results)}"] = links_found
 
-    async def run_scenarios_from_file(self, file_path: str) -> List[ScenarioReport]:
+    async def run_scenarios_from_file(self, file_path: str, output_dir: str = "reports") -> List[ScenarioReport]:
         """Load and run scenarios from a JSON file.
 
         Args:
             file_path: Path to the scenarios JSON file
+            output_dir: Directory to save individual scenario reports (default: "reports")
 
         Returns:
             List of scenario reports
@@ -197,14 +217,51 @@ class ScenarioRunner:
         scenarios = self.load_scenarios(file_path)
         reports = []
 
+        # Create output directory if it doesn't exist
+        reports_path = Path(output_dir)
+        reports_path.mkdir(parents=True, exist_ok=True)
+
         await self.setup()
 
-        for scenario in scenarios:
-            report = await self.run_scenario(scenario)
-            reports.append(report)
-            logger.info(f"Scenario {scenario.name} completed: {'✓' if report.success else '✗'}")
+        try:
+            for scenario in scenarios:
+                report = await self.run_scenario(scenario)
+                reports.append(report)
+                logger.info(f"Scenario {scenario.name} completed: {'✓' if report.success else '✗'}")
+
+                # Save individual scenario report as JSON
+                self.save_scenario_report(report, output_dir)
+        finally:
+            # Cleanup: give time for any pending async cleanup
+            await asyncio.sleep(0.1)
 
         return reports
+
+    @staticmethod
+    def save_scenario_report(report: ScenarioReport, output_dir: str = "reports"):
+        """Save a scenario report to a JSON file.
+
+        Args:
+            report: The scenario report to save
+            output_dir: Directory to save the report (default: "reports")
+        """
+        reports_path = Path(output_dir)
+        reports_path.mkdir(parents=True, exist_ok=True)
+
+        # Create a safe filename from the scenario name
+        safe_name = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in report.scenario_name)
+        safe_name = safe_name.replace(' ', '_').lower()
+
+        # Add timestamp to make filename unique
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{safe_name}_{timestamp}.json"
+
+        filepath = reports_path / filename
+
+        with open(filepath, 'w') as f:
+            json.dump(report.to_dict(), f, indent=2)
+
+        logger.info(f"Saved scenario report to {filepath}")
 
     @staticmethod
     def load_scenarios(file_path: str) -> List[Scenario]:
@@ -224,7 +281,20 @@ class ScenarioRunner:
             data = json.load(f)
 
         scenarios = []
-        for item in data.get('scenarios', []):
+
+        # Handle both formats: single scenario (root object) or multiple scenarios (array under 'scenarios' key)
+        scenario_items = []
+        if 'scenarios' in data:
+            # Format with 'scenarios' wrapper containing an array
+            scenario_items = data['scenarios']
+        elif isinstance(data, list):
+            # Format with array at root level
+            scenario_items = data
+        else:
+            # Format with single scenario at root level
+            scenario_items = [data]
+
+        for item in scenario_items:
             conversation = []
             for turn_data in item.get('conversation', []):
                 conversation.append(ConversationTurn(
@@ -257,6 +327,16 @@ class ScenarioRunner:
             Formatted report string
         """
         total = len(reports)
+
+        if total == 0:
+            return "\n".join([
+                "=" * 60,
+                "CODE DEBUG AGENT - SCENARIO EXECUTION REPORT",
+                "=" * 60,
+                "No scenarios were executed.",
+                "=" * 60,
+            ])
+
         successful = sum(1 for r in reports if r.success)
         total_time = sum(r.execution_time for r in reports)
 
@@ -281,7 +361,24 @@ class ScenarioRunner:
                 report_lines.append(f"     Tools: {', '.join(set(report.tools_used))}")
 
             if report.errors:
-                report_lines.append(f"     Errors: {', '.join(report.errors)}")
+                # Format errors more cleanly - extract just the main error message
+                error_summaries = []
+                for error in report.errors:
+                    # Try to extract just the main message from the error
+                    if isinstance(error, str):
+                        # If it's a quota/rate limit error, extract the key info
+                        if "RESOURCE_EXHAUSTED" in error or "429" in error:
+                            if "quota" in error.lower():
+                                error_summaries.append("Quota exceeded (rate limit)")
+                            else:
+                                error_summaries.append("Rate limit exceeded")
+                        else:
+                            # For other errors, show first 100 chars
+                            error_summaries.append(error[:100] + "..." if len(error) > 100 else error)
+                    else:
+                        error_summaries.append(str(error)[:100])
+
+                report_lines.append(f"     Errors: {', '.join(error_summaries)}")
 
             if report.validation_results:
                 failed_validations = [
@@ -311,6 +408,44 @@ async def main():
                 print(f"  - {agent_info['name']}: {agent_info['description'][:50]}...")
                 print(f"    Model: {agent_info['model']}")
                 print(f"    Tools: {', '.join(agent_info['tools'])}")
+            return
+
+        if sys.argv[1] == "--all-scenarios" or sys.argv[1] == "--all":
+            # Run all scenario files in the scenarios directory
+            scenarios_dir = Path("src/scenarios")
+            scenario_files = sorted(scenarios_dir.glob("*.json"))
+
+            if not scenario_files:
+                print(f"No scenario files found in {scenarios_dir}")
+                return
+
+            agent_name = sys.argv[2] if len(sys.argv) > 2 else None
+
+            print(f"Found {len(scenario_files)} scenario file(s):")
+            for file in scenario_files:
+                print(f"  - {file.name}")
+            print()
+
+            # Run all scenario files
+            all_reports = []
+            for scenario_file in scenario_files:
+                print(f"\n{'='*60}")
+                print(f"Running scenarios from: {scenario_file.name}")
+                print(f"{'='*60}\n")
+
+                runner = ScenarioRunner(agent_name=agent_name)
+                try:
+                    reports = await runner.run_scenarios_from_file(str(scenario_file))
+                    all_reports.extend(reports)
+                except Exception as e:
+                    print(f"Error running scenarios from {scenario_file.name}: {e}")
+
+            # Generate combined report
+            if all_reports:
+                print("\n" + ScenarioRunner(agent_name=agent_name).generate_report(all_reports))
+
+            # Give time for async cleanup
+            await asyncio.sleep(0.2)
             return
 
         scenario_file = sys.argv[1]
@@ -372,6 +507,9 @@ async def main():
     except Exception as e:
         print(f"Error running scenarios: {e}")
         raise
+    finally:
+        # Give time for async cleanup
+        await asyncio.sleep(0.2)
 
 
 if __name__ == "__main__":

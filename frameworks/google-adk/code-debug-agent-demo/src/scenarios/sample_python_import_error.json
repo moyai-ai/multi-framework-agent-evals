@@ -1,0 +1,18 @@
+{
+  "name": "Python Import Error",
+  "description": "Test handling of Python import errors",
+  "error_message": "ImportError: No module named 'pandas'",
+  "programming_language": "python",
+  "conversation": [
+    {
+      "user_input": "ImportError: No module named 'pandas'",
+      "expected_tools": [
+        "search_stack_exchange_for_error"
+      ],
+      "expected_keywords": [
+        "pip install",
+        "pandas"
+      ]
+    }
+  ]
+}

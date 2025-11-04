@@ -86,7 +86,10 @@ class TestTools:
 
             result = await search_stack_exchange_for_error(
                 error_message="ImportError: No module named 'pandas'",
-                programming_language="python"
+                programming_language="python",
+                framework=None,
+                include_solutions=True,
+                max_results=5
             )
 
             result_data = json.loads(result)
@@ -115,7 +118,11 @@ class TestTools:
 
             result = await search_stack_exchange_general(
                 query="async await python",
-                tags=["python"]
+                site="stackoverflow",
+                tags=["python"],
+                sort_by="relevance",
+                has_accepted_answer=None,
+                max_results=10
             )
 
             result_data = json.loads(result)
@@ -143,6 +150,7 @@ class TestTools:
 
             result = await get_stack_exchange_answers(
                 question_id=12345,
+                site="stackoverflow",
                 max_answers=3
             )
 
@@ -161,7 +169,9 @@ class TestTools:
 
             result = await analyze_error_and_suggest_fix(
                 error_message="ImportError: No module named 'pandas'",
-                file_type="py"
+                code_context=None,
+                file_type="py",
+                search_limit=3
             )
 
             result_data = json.loads(result)

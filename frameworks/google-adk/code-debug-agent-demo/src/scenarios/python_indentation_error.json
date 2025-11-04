@@ -1,0 +1,17 @@
+{
+  "name": "Python IndentationError",
+  "description": "Common Python indentation syntax error",
+  "error_message": "IndentationError: unexpected indent",
+  "programming_language": "python",
+  "conversation": [
+    {
+      "user_input": "Python throws: IndentationError: unexpected indent at line 15",
+      "expected_tools": ["search_stack_exchange_for_error", "search_stack_exchange_general"],
+      "expected_keywords": ["indentation", "spaces", "tabs", "Python syntax"]
+    }
+  ],
+  "metadata": {
+    "difficulty": "easy",
+    "category": "syntax_error"
+  }
+}

@@ -34,7 +34,7 @@ This agent follows Google ADK patterns and includes:
 
 ```bash
 # Install dependencies
-uv sync
+unset VIRTUAL_ENV && uv sync
 ```
 
 ## Usage
@@ -77,14 +77,17 @@ uv run python run_agent.py
 #### Using the Runner Framework
 
 ```bash
-# Run with default scenarios
-unset VIRTUAL_ENV && uv run python -m src.runner
+# Run ALL scenario files in src/scenarios/
+unset VIRTUAL_ENV && uv run python -m src.runner --all-scenarios
+
+# Run all scenarios with a specific agent
+unset VIRTUAL_ENV && uv run python -m src.runner --all-scenarios quick_debug_agent
 
 # Run specific scenario file
-unset VIRTUAL_ENV && uv run python -m src.runner src/scenarios/common_errors.json
+unset VIRTUAL_ENV && uv run python -m src.runner src/scenarios/python_attribute_error_missing_method.json
 
-# Use a specific agent
-unset VIRTUAL_ENV && uv run python -m src.runner src/scenarios/common_errors.json quick_debug_agent
+# Use a specific agent with a specific scenario file
+unset VIRTUAL_ENV && uv run python -m src.runner src/scenarios/python_attribute_error_missing_method.json quick_debug_agent
 
 # List available agents
 unset VIRTUAL_ENV && uv run python -m src.runner --list-agents
