@@ -40,7 +40,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           unset VIRTUAL_ENV
-          uv run python -m src.runner --all-scenarios
+          uv run python -m src.runner --all-scenarios --verbose
 
       - name: Upload scenario reports
         uses: actions/upload-artifact@v4

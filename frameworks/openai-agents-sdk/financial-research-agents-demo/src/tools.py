@@ -142,6 +142,96 @@ Valuation:
 • EV/EBITDA: 45.2x
 • No Dividend
 """
+    elif "rivian" in company_lower:
+        analysis = """
+Financial Analysis: Rivian Automotive Inc. (RIVN)
+
+Key Metrics (Q4 2024):
+• Revenue: $1.32B (+20% YoY)
+• Gross Margin: 31% (improved from negative)
+• Operating Margin: -26% (improving toward profitability)
+• Net Income: -$1.5B (improving losses)
+• EPS: -$1.58
+• Free Cash Flow: -$0.8B
+
+Balance Sheet Strength:
+• Cash & Equivalents: $9.2B
+• Total Debt: $2.8B
+• Debt-to-Equity: 0.4x
+• Current Ratio: 2.1x
+
+Growth Metrics:
+• Vehicle Deliveries: 57,232 units in 2024
+• Production Ramp: Scaling manufacturing capacity
+• Revenue Growth (3Y CAGR): 14%
+• Path to profitability: 2025-2026 target
+
+Valuation:
+• P/S Ratio: 4.2x
+• EV/Revenue: 5.1x
+• Market Cap: $5.5B
+• No Dividend
+"""
+    elif "nvidia" in company_lower:
+        analysis = """
+Financial Analysis: NVIDIA Corporation (NVDA)
+
+Key Metrics (Q4 2024):
+• Revenue: $22.1B (+14% YoY)
+• Gross Margin: 76.0%
+• Operating Margin: 60.1%
+• Net Income: $12.3B
+• EPS: $4.93
+• Free Cash Flow: $11.2B
+
+Balance Sheet Strength:
+• Cash & Equivalents: $26.9B
+• Total Debt: $9.8B
+• Debt-to-Equity: 0.2x
+• Current Ratio: 3.2x
+
+Growth Metrics:
+• Data Center Revenue Growth: 279% YoY
+• AI Chip Market Share: 80% in training
+• Revenue Growth (3Y CAGR): 17%
+• Gross Margin Trend: Expanding due to AI demand
+
+Valuation:
+• P/E Ratio: 75.2x
+• P/S Ratio: 38.5x
+• EV/EBITDA: 65.8x
+• Dividend Yield: 0.03%
+"""
+    elif "amd" in company_lower:
+        analysis = """
+Financial Analysis: Advanced Micro Devices Inc. (AMD)
+
+Key Metrics (Q4 2024):
+• Revenue: $6.2B (+14% YoY)
+• Gross Margin: 51.0%
+• Operating Margin: 23.0%
+• Net Income: $1.2B
+• EPS: $0.75
+• Free Cash Flow: $1.1B
+
+Balance Sheet Strength:
+• Cash & Equivalents: $5.8B
+• Total Debt: $2.1B
+• Debt-to-Equity: 0.3x
+• Current Ratio: 1.7x
+
+Growth Metrics:
+• Data Center Revenue Growth: 38% YoY
+• AI Inference Market Share: Growing
+• Revenue Growth (3Y CAGR): 16%
+• MI300 Series AI Chip Ramp: Strong demand
+
+Valuation:
+• P/E Ratio: 45.6x
+• P/S Ratio: 11.2x
+• EV/EBITDA: 38.4x
+• Dividend Yield: 0.0%
+"""
     else:
         # Generic analysis
         analysis = f"""
@@ -230,6 +320,43 @@ Strategic Risks (Medium):
 Overall Risk Rating: MODERATE
 Key Mitigants: Strong brand, loyal customer base, ecosystem lock-in, financial strength
 """
+    elif "rivian" in company_lower:
+        analysis = """
+Risk Analysis: Rivian Automotive Inc. (RIVN)
+
+Market Risks (Medium):
+• EV market competition intensifying - traditional OEMs entering
+• Price sensitivity and margin pressure in luxury SUV segment
+• Consumer adoption of electric trucks
+
+Operational Risks (Medium-High):
+• Production scaling challenges - manufacturing ramp
+• Supply chain dependencies for battery components
+• Quality control and service network expansion
+
+Financial Risks (Medium):
+• Cash burn rate - path to profitability critical
+• Capital requirements for scaling production
+• Working capital needs for inventory growth
+
+Competitive Risks (High):
+• Tesla dominance in EV market
+• Traditional OEMs (Ford, GM) with established brands
+• Chinese EV makers entering US market
+
+Regulatory Risks (Low-Medium):
+• EV tax credit eligibility and changes
+• Safety regulations and recalls
+• Environmental compliance
+
+Strategic Risks (Medium):
+• Execution on production targets
+• Consumer brand recognition vs established players
+• Technology differentiation (battery, software)
+
+Overall Risk Rating: MODERATE
+Key Mitigants: Strong financial backing (Amazon), unique product positioning, production capacity growth
+"""
     elif "tesla" in company_lower:
         analysis = """
 Risk Analysis: Tesla Inc. (TSLA)
@@ -266,6 +393,80 @@ Strategic Risks (High):
 
 Overall Risk Rating: ELEVATED
 Key Mitigants: First-mover advantage, vertical integration, brand strength
+"""
+    elif "nvidia" in company_lower:
+        analysis = """
+Risk Analysis: NVIDIA Corporation (NVDA)
+
+Market Risks (Medium):
+• AI chip demand cyclicality - potential market saturation
+• Customer concentration risk (large tech companies)
+• Geopolitical tensions affecting China market
+
+Operational Risks (Low):
+• Supply chain for advanced packaging (TSMC)
+• Manufacturing capacity constraints
+• Technology roadmap execution
+
+Financial Risks (Low):
+• Strong cash generation and balance sheet
+• High margins provide buffer
+• Minimal debt concerns
+
+Competitive Risks (Medium):
+• AMD gaining share in inference market
+• Custom silicon development by cloud providers (Google, Amazon)
+• Potential new entrants in AI chip space
+
+Regulatory Risks (Medium):
+• Export restrictions on AI chips to China
+• Antitrust scrutiny of dominant market position
+• Trade policy changes affecting semiconductor supply
+
+Strategic Risks (Medium):
+• Dependency on AI/ML market growth
+• Technology disruption risk
+• Diversification beyond data center
+
+Overall Risk Rating: MODERATE
+Key Mitigants: Market leadership, technology moat, strong financial position, ecosystem lock-in
+"""
+    elif "amd" in company_lower:
+        analysis = """
+Risk Analysis: Advanced Micro Devices Inc. (AMD)
+
+Market Risks (Medium):
+• Semiconductor industry cyclicality
+• PC market weakness affecting consumer segment
+• Data center spending fluctuations
+
+Operational Risks (Low-Medium):
+• Manufacturing dependency on TSMC
+• Supply chain for advanced nodes
+• Execution on product roadmap
+
+Financial Risks (Low):
+• Strong cash position
+• Moderate debt levels
+• Good free cash flow generation
+
+Competitive Risks (High):
+• NVIDIA dominance in AI training market
+• Intel competition in data center
+• Custom silicon development by customers
+
+Regulatory Risks (Low-Medium):
+• Trade policy affecting semiconductor supply
+• Export controls on advanced chips
+• Antitrust considerations
+
+Strategic Risks (Medium):
+• Success in AI inference market critical
+• Technology differentiation vs NVIDIA
+• Market share gains in data center
+
+Overall Risk Rating: MODERATE
+Key Mitigants: Strong product portfolio, data center growth, financial stability, execution track record
 """
     else:
         # Generic risk analysis

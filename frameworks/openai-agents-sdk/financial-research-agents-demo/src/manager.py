@@ -266,9 +266,16 @@ Write a comprehensive financial research report for: {query}
 
 {formatted_results}
 
-Use the analyst tools (company_financials_tool, risk_analysis_tool) to get detailed analysis.
-Follow the report structure provided in your instructions.
-Include an executive summary and 2-3 follow-up research questions.
+CRITICAL INSTRUCTIONS:
+1. ALWAYS use the company_financials_tool to get accurate financial data - do not make up numbers
+2. ALWAYS use the risk_analysis_tool to get proper risk assessment - do not guess risks
+3. Use the EXACT numbers from the tool outputs - ensure consistency across all sections
+4. Include source attribution in each section (e.g., "Based on financial analysis tools and search results")
+5. Follow the report structure provided in your instructions
+6. Include an executive summary and 2-3 follow-up research questions
+7. Ensure all financial metrics are consistent - use the same numbers throughout the report
+
+Remember: Use the tools to get real data, then cite your sources in the report.
 """
 
         result = await Runner.run(
