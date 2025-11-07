@@ -21,6 +21,13 @@ except ImportError:
         "claude-agent-sdk is required. Install with: pip install claude-agent-sdk"
     )
 
+try:
+    from langfuse import Langfuse
+    LANGFUSE_AVAILABLE = True
+except ImportError:
+    LANGFUSE_AVAILABLE = False
+    Langfuse = None  # type: ignore
+
 from ..tools import (
     parse_python_file,
     find_imports,
@@ -53,6 +60,36 @@ TOOL_HANDLERS = {
     "extract_package_versions": extract_package_versions,
     "get_framework_version": get_framework_version,
 }
+
+
+def initialize_langfuse() -> Optional[Langfuse]:
+    """Initialize Langfuse client if credentials are available.
+
+    Returns:
+        Langfuse client or None if not configured
+    """
+    if not LANGFUSE_AVAILABLE:
+        return None
+
+    secret_key = os.getenv("LANGFUSE_SECRET_KEY")
+    public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
+    base_url = os.getenv("LANGFUSE_BASE_URL", "https://cloud.langfuse.com")
+
+    if not secret_key or not public_key:
+        print("⚠️  Langfuse credentials not found. Set LANGFUSE_SECRET_KEY and LANGFUSE_PUBLIC_KEY to enable tracing.")
+        return None
+
+    try:
+        langfuse_client = Langfuse(
+            secret_key=secret_key,
+            public_key=public_key,
+            host=base_url,
+        )
+        print(f"✅ Langfuse initialized: {base_url}")
+        return langfuse_client
+    except Exception as e:
+        print(f"⚠️  Failed to initialize Langfuse: {e}")
+        return None
 
 
 async def execute_tool(tool_name: str, args: Dict[str, Any]) -> Any:
@@ -196,6 +233,9 @@ async def instrument_codebase_with_agent(
             - report: str
             - error: Optional[str]
     """
+    # Initialize Langfuse for self-instrumentation
+    langfuse_client = initialize_langfuse()
+
     try:
         # Create agent options (includes system prompt)
         options = create_agent_options(codebase_path, config)
@@ -215,48 +255,139 @@ Start by detecting the frameworks using Grep and Read tools, then proceed with i
         tools_used: List[str] = []
         frameworks_detected: List[str] = []
         files_modified: List[str] = []
+        turn_count = 0
 
-        # Query the agent
-        # Note: API key should be set via ANTHROPIC_API_KEY environment variable
-        # or passed via options if supported
-        async for message in query(
-            prompt=initial_prompt,
-            options=options,
-        ):
-            if isinstance(message, AssistantMessage):
-                message_data = {"type": "assistant", "content": []}
-                
-                for block in message.content:
-                    if isinstance(block, TextBlock):
-                        text_responses.append(block.text)
-                        message_data["content"].append({
-                            "type": "text",
-                            "text": block.text
-                        })
-                    elif isinstance(block, ToolUseBlock):
-                        tools_used.append(block.name)
-                        message_data["content"].append({
-                            "type": "tool_use",
-                            "name": block.name,
-                            "input": block.input
-                        })
-                        
-                        # Track file modifications
-                        if block.name == "Write":
-                            file_path = block.input.get("path", "")
-                            if file_path:
-                                files_modified.append(file_path)
-                
-                messages.append(message_data)
-                
-            elif isinstance(message, ResultMessage):
-                # Store result metadata
-                result_data = {
-                    "type": "result",
-                    "usage": message.usage,
-                    "total_cost_usd": message.total_cost_usd,
-                }
-                messages.append(result_data)
+        # Use Langfuse context manager for tracing
+        if langfuse_client:
+            with langfuse_client.start_as_current_span(
+                name="agent_instrumentor_execution",
+                input={
+                    "codebase_path": codebase_path,
+                    "platform": config.platform,
+                    "level": config.level.value,
+                    "targets": [t.value for t in config.targets],
+                    "prompt": initial_prompt,
+                },
+                metadata={
+                    "max_turns": options.max_turns,
+                    "cwd": options.cwd,
+                },
+            ) as trace_span:
+                # Create generation span for the agent execution
+                with trace_span.start_as_current_generation(
+                    name="agent_query_execution",
+                    model="claude-3-5-sonnet-20241022",
+                    input=initial_prompt,
+                ) as generation_span:
+                    # Query the agent
+                    async for message in query(
+                        prompt=initial_prompt,
+                        options=options,
+                    ):
+                        if isinstance(message, AssistantMessage):
+                            turn_count += 1
+                            message_data = {"type": "assistant", "content": [], "turn": turn_count}
+
+                            for block in message.content:
+                                if isinstance(block, TextBlock):
+                                    text_responses.append(block.text)
+                                    message_data["content"].append({
+                                        "type": "text",
+                                        "text": block.text
+                                    })
+                                elif isinstance(block, ToolUseBlock):
+                                    tools_used.append(block.name)
+                                    message_data["content"].append({
+                                        "type": "tool_use",
+                                        "name": block.name,
+                                        "input": block.input
+                                    })
+
+                                    # Log tool call to Langfuse as span
+                                    tool_span = trace_span.start_span(
+                                        name=f"tool_{block.name}",
+                                        input=block.input,
+                                        metadata={
+                                            "tool_name": block.name,
+                                            "turn": turn_count,
+                                        },
+                                    )
+                                    tool_span.end()
+
+                                    # Track file modifications
+                                    if block.name in ["Write", "Edit"]:
+                                        file_path = block.input.get("file_path", block.input.get("path", ""))
+                                        if file_path:
+                                            files_modified.append(file_path)
+
+                            messages.append(message_data)
+
+                        elif isinstance(message, ResultMessage):
+                            # Store result metadata
+                            result_data = {
+                                "type": "result",
+                                "usage": message.usage,
+                                "total_cost_usd": message.total_cost_usd,
+                            }
+                            messages.append(result_data)
+
+                            # Update generation span with usage
+                            if hasattr(message, 'usage') and message.usage:
+                                generation_span.update(
+                                    output="\n\n".join(text_responses),
+                                    usage_details={
+                                        "input": message.usage.get("input_tokens", 0),
+                                        "output": message.usage.get("output_tokens", 0),
+                                        "total": message.usage.get("input_tokens", 0) + message.usage.get("output_tokens", 0),
+                                    },
+                                    cost_details={
+                                        "total_cost": message.total_cost_usd,
+                                    } if message.total_cost_usd else None,
+                                    metadata={
+                                        "total_turns": turn_count,
+                                    }
+                                )
+        else:
+            # No Langfuse - run without instrumentation
+            async for message in query(
+                prompt=initial_prompt,
+                options=options,
+            ):
+                if isinstance(message, AssistantMessage):
+                    turn_count += 1
+                    message_data = {"type": "assistant", "content": [], "turn": turn_count}
+
+                    for block in message.content:
+                        if isinstance(block, TextBlock):
+                            text_responses.append(block.text)
+                            message_data["content"].append({
+                                "type": "text",
+                                "text": block.text
+                            })
+                        elif isinstance(block, ToolUseBlock):
+                            tools_used.append(block.name)
+                            message_data["content"].append({
+                                "type": "tool_use",
+                                "name": block.name,
+                                "input": block.input
+                            })
+
+                            # Track file modifications
+                            if block.name in ["Write", "Edit"]:
+                                file_path = block.input.get("file_path", block.input.get("path", ""))
+                                if file_path:
+                                    files_modified.append(file_path)
+
+                    messages.append(message_data)
+
+                elif isinstance(message, ResultMessage):
+                    # Store result metadata
+                    result_data = {
+                        "type": "result",
+                        "usage": message.usage,
+                        "total_cost_usd": message.total_cost_usd,
+                    }
+                    messages.append(result_data)
 
         # Extract frameworks from responses (simplified - could be improved)
         # Look for framework mentions in text responses
@@ -280,7 +411,7 @@ Start by detecting the frameworks using Grep and Read tools, then proceed with i
             "summary": "\n\n".join(text_responses),
         }
 
-        return {
+        result = {
             "success": True,
             "frameworks_detected": frameworks_detected,
             "files_modified": list(set(files_modified)),
@@ -288,11 +419,23 @@ Start by detecting the frameworks using Grep and Read tools, then proceed with i
             "error": None
         }
 
+        # Flush Langfuse to ensure all events are sent
+        if langfuse_client:
+            langfuse_client.flush()
+
+        return result
+
     except Exception as e:
-        return {
+        error_result = {
             "success": False,
             "frameworks_detected": [],
             "files_modified": [],
             "report": None,
             "error": str(e)
         }
+
+        # Flush Langfuse to ensure error is logged
+        if langfuse_client:
+            langfuse_client.flush()
+
+        return error_result

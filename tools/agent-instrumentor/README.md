@@ -40,9 +40,14 @@ ANTHROPIC_API_KEY=your-anthropic-key
 # Recommended (for Nia MCP documentation search)
 NIA_API_KEY=your-nia-key  # Get one at https://app.trynia.ai/
 
-# Platform-specific (e.g., for Langfuse)
+# Optional: Self-Instrumentation with Langfuse
+# These credentials enable observability of the agent-instrumentor itself
 LANGFUSE_PUBLIC_KEY=your-langfuse-public-key
 LANGFUSE_SECRET_KEY=your-langfuse-secret-key
+LANGFUSE_BASE_URL=https://cloud.langfuse.com  # Optional, defaults to Langfuse cloud
+
+# When running instrumentation on a target codebase, the target's platform
+# credentials will be documented in the generated instrumentation code
 ```
 
 ## 🎯 Quick Start
@@ -431,6 +436,87 @@ uv run mypy src/
 # Lint
 uv run ruff check src/
 ```
+
+## 🔭 Self-Instrumentation with Langfuse
+
+The agent-instrumentor itself is instrumented with Langfuse to provide observability into its own execution. This helps you:
+
+- **Debug the agent's reasoning**: See how the agent detects frameworks, searches documentation, and makes instrumentation decisions
+- **Track tool usage**: Monitor which tools the agent calls (Grep, Read, Write, Nia MCP search, etc.)
+- **Measure performance**: Track execution time, token usage, and cost per instrumentation run
+- **Analyze failures**: Understand why instrumentation failed and what steps the agent took
+
+### Setup
+
+To enable self-instrumentation, add Langfuse credentials to your `.env` file:
+
+```bash
+LANGFUSE_SECRET_KEY=sk-lf-...
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_BASE_URL=https://cloud.langfuse.com  # Optional
+```
+
+### What Gets Traced
+
+When you run the agent-instrumentor, Langfuse will capture:
+
+1. **Trace**: Top-level execution with metadata about the codebase, platform, and configuration
+2. **Generation**: The agent's LLM calls with full prompts, responses, token usage, and cost
+3. **Spans**: Individual tool calls (file operations, documentation searches, code generation)
+4. **Metadata**: Detected frameworks, modified files, total turns, and execution outcomes
+
+### Viewing Traces
+
+After running the agent-instrumentor:
+
+1. Visit your Langfuse dashboard at https://cloud.langfuse.com (or your self-hosted instance)
+2. Navigate to the "Traces" page
+3. Filter by tag: `agent-instrumentor` or by trace name: `agent_instrumentor_execution`
+4. Click on a trace to see:
+   - Full conversation history between agent and tools
+   - Token usage and costs per generation
+   - Tool execution timeline
+   - Success/failure status and error messages
+
+### Example Trace Structure
+
+```
+Trace: agent_instrumentor_execution
+├── Generation: agent_query_execution (Claude 3.5 Sonnet)
+│   ├── Input: "Please instrument the codebase..."
+│   ├── Output: Agent's reasoning and actions
+│   ├── Usage: 15,234 input tokens, 3,421 output tokens
+│   └── Cost: $0.23 USD
+├── Span: tool_call_Grep (turn 1)
+│   └── Input: {pattern: "langchain", path: "."}
+├── Span: tool_call_Read (turn 2)
+│   └── Input: {file_path: "agents.py"}
+├── Span: tool_call_mcp__nia__index_documentation (turn 3)
+│   └── Input: {url: "https://langfuse.com/docs"}
+├── Span: tool_call_mcp__nia__search_documentation (turn 4)
+│   └── Input: {query: "LangChain callback handler"}
+├── Span: tool_call_Edit (turn 5)
+│   └── Input: {file_path: "agents.py", ...}
+└── Metadata:
+    ├── frameworks_detected: ["langchain"]
+    ├── files_modified: ["agents.py"]
+    ├── tools_used: ["Grep", "Read", "Edit", "mcp__nia__*"]
+    └── total_turns: 12
+```
+
+### Benefits
+
+- **Optimize prompts**: Analyze which system prompts lead to better instrumentation results
+- **Reduce costs**: Identify unnecessarily long agent conversations and optimize tool usage
+- **Improve reliability**: Track failure patterns and improve error handling
+- **Measure quality**: Correlate agent behavior with successful instrumentation outcomes
+
+### Note
+
+The self-instrumentation tracks the **agent-instrumentor's execution** (i.e., the tool that adds observability to other codebases). This is separate from the instrumentation that the tool **adds to your target codebase**. Both use Langfuse but serve different purposes:
+
+- **Self-instrumentation** (this section): Observability of the agent-instrumentor tool itself
+- **Target instrumentation** (main feature): Observability added to your agent codebase
 
 ## 🐛 Troubleshooting
 

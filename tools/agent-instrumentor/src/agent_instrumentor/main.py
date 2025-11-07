@@ -48,6 +48,11 @@ Environment Variables:
   NIA_API_KEY           Nia MCP API key (required for documentation search)
   NIA_API_URL           Nia API URL (defaults to https://apigcp.trynia.ai/)
 
+  # Optional: Self-instrumentation with Langfuse
+  LANGFUSE_SECRET_KEY   Langfuse secret key (optional, for self-instrumentation)
+  LANGFUSE_PUBLIC_KEY   Langfuse public key (optional, for self-instrumentation)
+  LANGFUSE_BASE_URL     Langfuse base URL (optional, defaults to https://cloud.langfuse.com)
+
 For more information: https://github.com/anthropics/agent-instrumentor
         """
     )
