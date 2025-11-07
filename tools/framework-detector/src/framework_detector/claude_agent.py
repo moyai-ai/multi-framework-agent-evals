@@ -45,8 +45,9 @@ def create_report_dir() -> str:
     """Create reports directory if it doesn't exist."""
     # Get the directory containing this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    # Go up 3 levels: framework_detector -> src -> framework-detector -> tools/framework-detector
-    reports_dir = os.path.join(script_dir, "..", "..", "..", "reports")
+    # Go up 2 levels: framework_detector -> src -> framework-detector
+    # Then create reports directory within framework-detector
+    reports_dir = os.path.join(script_dir, "..", "..", "reports")
     reports_dir = os.path.abspath(reports_dir)
     os.makedirs(reports_dir, exist_ok=True)
     return reports_dir

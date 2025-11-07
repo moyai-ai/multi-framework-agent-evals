@@ -28,6 +28,9 @@ unset VIRTUAL_ENV && uv run framework-agent
 
 # Using --path flag
 unset VIRTUAL_ENV && uv run framework-agent /path/to/your/codebase
+
+# Run from the project root
+unset VIRTUAL_ENV && uv run --directory tools/framework-detector framework-agent /path/to/your/codebase
 ```
 
 This will:
