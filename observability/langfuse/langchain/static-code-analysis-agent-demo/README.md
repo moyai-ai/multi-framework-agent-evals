@@ -1,6 +1,8 @@
-# Static Code Analysis Agent Demo
+# Static Code Analysis Agent Demo with Langfuse Observability
 
-A LangGraph ReAct agent that performs static code analysis on GitHub repositories using OpenGrep and GitHub MCP integration.
+A LangGraph ReAct agent that performs static code analysis on GitHub repositories using OpenGrep and GitHub MCP integration, **instrumented with Langfuse for full observability**.
+
+> 🔍 **This is the traced version** of the static code analysis agent. For the untraced version, see `frameworks/langchain/static-code-analysis-agent-demo/`.
 
 ## Overview
 
@@ -9,8 +11,20 @@ This demo showcases a **ReAct (Reasoning + Acting)** agent built with LangGraph 
 - Detect code quality issues and anti-patterns
 - Identify vulnerable dependencies
 - Generate detailed reports with remediation recommendations
+- **📊 Provide full observability via Langfuse tracing**
 
-The agent uses the ReAct pattern to iteratively reason about what analysis to perform, execute tools, observe results, and continue until the analysis is complete.
+The agent uses the ReAct pattern to iteratively reason about what analysis to perform, execute tools, observe results, and continue until the analysis is complete. **All operations are traced in Langfuse** for comprehensive monitoring and debugging.
+
+## 🆕 Langfuse Integration
+
+This version includes full Langfuse tracing for:
+- **LLM Calls**: Track all OpenAI API calls with prompts, responses, tokens, and costs
+- **Tool Executions**: Monitor GitHub MCP tools and OpenGrep analysis
+- **Agent Workflow**: Visualize the complete ReAct loop
+- **Node-level Spans**: Detailed timing and data for each graph node
+- **End-to-end Traces**: Complete analysis sessions grouped under unified traces
+
+**See [LANGFUSE_README.md](./LANGFUSE_README.md) for detailed Langfuse integration documentation.**
 
 ## Features
 
@@ -92,6 +106,22 @@ opengrep --version
 ### Required API Keys
 
 - **OpenAI API Key** (required): For LLM capabilities
+- **Langfuse API Keys** (required for tracing): Get free keys at [cloud.langfuse.com](https://cloud.langfuse.com)
+
+### Langfuse Setup
+
+1. Sign up at [cloud.langfuse.com](https://cloud.langfuse.com)
+2. Create a new project
+3. Go to **Settings** → **API Keys**
+4. Copy your **Public Key** (starts with `pk-lf-`) and **Secret Key** (starts with `sk-lf-`)
+5. Add them to your `.env` file:
+
+```bash
+LANGFUSE_PUBLIC_KEY=pk-lf-your-public-key
+LANGFUSE_SECRET_KEY=sk-lf-your-secret-key
+LANGFUSE_HOST=https://cloud.langfuse.com
+LANGFUSE_ENABLED=true
+```
 
 ### OpenGrep Configuration
 
@@ -276,6 +306,10 @@ static-code-analysis-agent-demo/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `OPENAI_API_KEY` | OpenAI API key for LLM | Required |
+| `LANGFUSE_PUBLIC_KEY` | Langfuse public key | Required for tracing |
+| `LANGFUSE_SECRET_KEY` | Langfuse secret key | Required for tracing |
+| `LANGFUSE_HOST` | Langfuse host URL | https://cloud.langfuse.com |
+| `LANGFUSE_ENABLED` | Enable/disable Langfuse tracing | true |
 | `MODEL_NAME` | LLM model to use | gpt-4-turbo-preview |
 | `TEMPERATURE` | Model temperature | 0.3 |
 | `DEBUG` | Enable debug output | false |
