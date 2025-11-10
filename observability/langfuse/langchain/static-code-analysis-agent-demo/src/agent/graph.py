@@ -27,11 +27,14 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
     # Initialize Langfuse handler if enabled and not provided
     if langfuse_handler is None and config.LANGFUSE_ENABLED:
         if config.LANGFUSE_PUBLIC_KEY and config.LANGFUSE_SECRET_KEY:
-            langfuse_handler = CallbackHandler(
-                public_key=config.LANGFUSE_PUBLIC_KEY,
-                secret_key=config.LANGFUSE_SECRET_KEY,
-                host=config.LANGFUSE_HOST
-            )
+            # Set environment variables for Langfuse client
+            import os
+            os.environ["LANGFUSE_PUBLIC_KEY"] = config.LANGFUSE_PUBLIC_KEY
+            os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
+            os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
+
+            # Initialize handler (credentials from environment)
+            langfuse_handler = CallbackHandler()
             print("✓ Langfuse tracing enabled")
         else:
             print("⚠ Langfuse enabled but credentials not found. Tracing disabled.")
@@ -73,10 +76,6 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
         if langfuse_client:
             span_context = langfuse_client.start_as_current_span(
                 name="reasoning-node",
-                as_type="span"
-            )
-            span_context.__enter__()
-            span_context.update(
                 input={
                     "current_step": state['current_step'],
                     "files_to_analyze": len(state['files_to_analyze']),
@@ -84,6 +83,7 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
                     "issues_found": len(state['issues_found'])
                 }
             )
+            span_context.__enter__()
 
         print(f"\nDEBUG reasoning_node: Step {state['current_step']}/{state['max_steps']}")
         print(f"  Files to analyze: {len(state['files_to_analyze'])}")
@@ -158,14 +158,18 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
         state["current_step"] += 1
 
         if span_context:
-            span_context.update(
-                output={
-                    "has_tool_calls": has_tools,
-                    "consecutive_no_tool_calls": state["consecutive_no_tool_calls"],
-                    "should_continue": state["should_continue"]
-                }
-            )
-            span_context.__exit__(None, None, None)
+            try:
+                span_context.update(
+                    output={
+                        "has_tool_calls": has_tools,
+                        "consecutive_no_tool_calls": state["consecutive_no_tool_calls"],
+                        "should_continue": state["should_continue"]
+                    }
+                )
+            except Exception:
+                pass  # Ignore span update errors
+            finally:
+                span_context.__exit__(None, None, None)
 
         return state
 
@@ -338,36 +342,19 @@ async def run_agent(
     if config is None:
         config = Config()
 
-    # Initialize Langfuse handler and client if enabled
+    # Initialize Langfuse handler if enabled
     langfuse_handler = None
-    langfuse_client = None
-    trace_context = None
 
     if config.LANGFUSE_ENABLED and config.LANGFUSE_PUBLIC_KEY and config.LANGFUSE_SECRET_KEY:
-        langfuse_handler = CallbackHandler(
-            public_key=config.LANGFUSE_PUBLIC_KEY,
-            secret_key=config.LANGFUSE_SECRET_KEY,
-            host=config.LANGFUSE_HOST
-        )
-        langfuse_client = get_client()
+        # Set environment variables for Langfuse client
+        import os
+        os.environ["LANGFUSE_PUBLIC_KEY"] = config.LANGFUSE_PUBLIC_KEY
+        os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
+        os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
 
-        # Create a top-level trace for the entire analysis
-        trace_context = langfuse_client.start_as_current_span(
-            name="static-code-analysis",
-            as_type="trace"
-        )
-        trace_context.__enter__()
-        trace_context.update(
-            input={
-                "repository_url": repository_url,
-                "analysis_type": analysis_type
-            },
-            metadata={
-                "model": config.MODEL_NAME,
-                "temperature": config.TEMPERATURE
-            },
-            tags=["static-analysis", analysis_type, "langgraph"]
-        )
+        # Initialize handler (will create traces automatically)
+        langfuse_handler = CallbackHandler()
+        print("✓ Langfuse tracing enabled for analysis")
 
     # Create initial state
     initial_state = create_initial_state(
@@ -398,18 +385,6 @@ async def run_agent(
         "steps_taken": final_state["current_step"],
         "error": final_state.get("error")
     }
-
-    # Update trace with final output
-    if trace_context:
-        trace_context.update(
-            output={
-                "files_analyzed": len(final_state["files_analyzed"]),
-                "issues_found": len(final_state["issues_found"]),
-                "steps_taken": final_state["current_step"],
-                "status": "error" if final_state.get("error") else "completed"
-            }
-        )
-        trace_context.__exit__(None, None, None)
 
     return result
 
