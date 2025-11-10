@@ -33,6 +33,8 @@ class AnalysisManager:
         self,
         repository_url: str,
         analysis_type: str = "security",
+        user_id: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Analyze a GitHub repository.
@@ -40,6 +42,8 @@ class AnalysisManager:
         Args:
             repository_url: URL of the repository to analyze
             analysis_type: Type of analysis (security, quality, dependencies)
+            user_id: Optional user identifier for tracking (enhances observability)
+            session_id: Optional session identifier for grouping analyses (enhances observability)
 
         Returns:
             Analysis results dictionary
@@ -51,7 +55,9 @@ class AnalysisManager:
             result = await run_agent(
                 repository_url=repository_url,
                 analysis_type=analysis_type,
-                config=self.config
+                config=self.config,
+                user_id=user_id,
+                session_id=session_id
             )
 
             self._log("\nAnalysis completed successfully!")
@@ -119,6 +125,18 @@ async def main():
         action="store_true",
         help="Suppress verbose output",
     )
+    parser.add_argument(
+        "--user-id",
+        dest="user_id",
+        default=None,
+        help="User identifier for tracking (enhances Langfuse observability)",
+    )
+    parser.add_argument(
+        "--session-id",
+        dest="session_id",
+        default=None,
+        help="Session identifier for grouping analyses (enhances Langfuse observability)",
+    )
 
     args = parser.parse_args()
 
@@ -129,6 +147,8 @@ async def main():
     result = await manager.analyze_repository(
         repository_url=args.repository_url,
         analysis_type=args.analysis_type,
+        user_id=args.user_id,
+        session_id=args.session_id,
     )
 
     # Exit with error code if analysis failed

@@ -2,6 +2,8 @@
 
 This is an instrumented version of the LangGraph ReAct agent for static code analysis, enhanced with **Langfuse** for full observability and tracing.
 
+> 🎯 **Phase 1 Improvements**: This agent now includes enhanced observability features including user/session tracking, comprehensive tags, rich metadata, and version tracking. See [PHASE1_IMPROVEMENTS.md](./PHASE1_IMPROVEMENTS.md) for details.
+
 ## Overview
 
 This agent demonstrates how to integrate Langfuse tracing into a LangGraph-based agentic application, providing comprehensive observability for:
@@ -11,6 +13,10 @@ This agent demonstrates how to integrate Langfuse tracing into a LangGraph-based
 - **Agent Workflow**: Visualize the ReAct loop (Reasoning → Action → Observation)
 - **Node-level Tracing**: Detailed spans for each graph node execution
 - **End-to-end Traces**: Complete analysis sessions grouped under unified traces
+- **User & Session Tracking**: Track usage per user and group related analyses (Phase 1)
+- **Smart Tags**: Auto-tagging by analysis type, status, and severity (Phase 1)
+- **Rich Metadata**: Repository details, analysis config, results breakdown (Phase 1)
+- **Version Tracking**: A/B testing and configuration comparison (Phase 1)
 
 ## Architecture
 
@@ -148,6 +154,31 @@ uv run --env-file .env python -m src.manager "https://github.com/example/repo" -
 uv run --env-file .env python -m src.manager "https://github.com/example/repo" --type dependencies
 ```
 
+### Enhanced Observability (Phase 1)
+
+Track user activity and group analyses into sessions:
+
+```bash
+# With user and session tracking
+uv run --env-file .env python -m src.manager "https://github.com/example/repo" \
+  --type security \
+  --user-id "alice@example.com" \
+  --session-id "sprint-review-2024-01"
+
+# Test the improvements
+uv run --env-file .env python test_enhanced_observability.py
+```
+
+**Benefits**:
+- Track usage and costs per user
+- Group related analyses into sessions
+- Filter traces by user/session in Langfuse UI
+- Automatic tagging by analysis type, status, and severity
+- Rich metadata with repository details and results breakdown
+- Version tracking for A/B testing
+
+See [PHASE1_IMPROVEMENTS.md](./PHASE1_IMPROVEMENTS.md) for full details.
+
 ### Python API
 
 ```python
@@ -163,10 +194,12 @@ async def main():
     # Create manager
     manager = AnalysisManager(config=config, verbose=True)
 
-    # Run analysis with tracing
+    # Run analysis with tracing and user/session tracking
     result = await manager.analyze_repository(
         repository_url="https://github.com/example/repo",
-        analysis_type="security"
+        analysis_type="security",
+        user_id="alice@example.com",  # Optional, defaults to "anonymous"
+        session_id="sprint-review-2024-01"  # Optional, auto-generated if not provided
     )
 
     print(f"Trace captured in Langfuse!")

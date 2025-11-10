@@ -336,24 +336,37 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
 async def run_agent(
     repository_url: str,
     analysis_type: str = "security",
-    config: Optional[Config] = None
+    config: Optional[Config] = None,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Run the ReAct agent for code analysis with Langfuse tracing."""
+    """Run the ReAct agent for code analysis with Langfuse tracing.
+
+    Args:
+        repository_url: The GitHub repository URL to analyze
+        analysis_type: Type of analysis (security, quality, dependencies)
+        config: Configuration object
+        user_id: Optional user identifier for tracking usage per user
+        session_id: Optional session identifier for grouping related analyses
+    """
     if config is None:
         config = Config()
 
     # Initialize Langfuse handler if enabled
     langfuse_handler = None
+    langfuse_client = None
 
     if config.LANGFUSE_ENABLED and config.LANGFUSE_PUBLIC_KEY and config.LANGFUSE_SECRET_KEY:
         # Set environment variables for Langfuse client
         import os
+        from datetime import datetime
         os.environ["LANGFUSE_PUBLIC_KEY"] = config.LANGFUSE_PUBLIC_KEY
         os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
         os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
 
         # Initialize handler (will create traces automatically)
         langfuse_handler = CallbackHandler()
+        langfuse_client = get_client()
         print("✓ Langfuse tracing enabled for analysis")
 
     # Create initial state
@@ -385,6 +398,90 @@ async def run_agent(
         "steps_taken": final_state["current_step"],
         "error": final_state.get("error")
     }
+
+    # Update Langfuse trace with enhanced observability data (Phase 1 improvements)
+    if langfuse_client:
+        from datetime import datetime
+
+        # Set user and session IDs
+        trace_user_id = user_id or "anonymous"
+        trace_session_id = session_id or f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        # Prepare tags
+        tags = [
+            "static-analysis",
+            analysis_type,  # security, quality, or dependencies
+            "langgraph",
+            "production",  # Can be made configurable via environment variable
+        ]
+
+        # Add status tags
+        if final_state.get("error"):
+            tags.append("error")
+        else:
+            tags.append("success")
+
+        # Add severity tags based on issues found
+        severity_counts = {}
+        for issue in final_state.get("issues_found", []):
+            severity = issue.get("severity", "UNKNOWN")
+            severity_counts[severity] = severity_counts.get(severity, 0) + 1
+
+        if severity_counts.get("CRITICAL", 0) > 0:
+            tags.append("has-critical-issues")
+        if severity_counts.get("HIGH", 0) > 0:
+            tags.append("has-high-issues")
+
+        # Prepare metadata
+        metadata = {
+            "repository": {
+                "url": repository_url,
+                "owner": final_state["repository_owner"],
+                "name": final_state["repository_name"]
+            },
+            "analysis": {
+                "type": analysis_type,
+                "model": config.MODEL_NAME,
+                "temperature": config.TEMPERATURE,
+                "max_steps": final_state["max_steps"]
+            },
+            "results": {
+                "files_analyzed": len(final_state["files_analyzed"]),
+                "total_files": len(final_state["files_to_analyze"]),
+                "issues_found": len(final_state["issues_found"]),
+                "severity_breakdown": {
+                    "CRITICAL": severity_counts.get("CRITICAL", 0),
+                    "HIGH": severity_counts.get("HIGH", 0),
+                    "MEDIUM": severity_counts.get("MEDIUM", 0),
+                    "LOW": severity_counts.get("LOW", 0),
+                }
+            },
+            "execution": {
+                "steps_taken": final_state["current_step"],
+                "completed": final_state["should_continue"] == False,
+                "has_error": final_state.get("error") is not None
+            }
+        }
+
+        # Set version for A/B testing and tracking changes
+        version = f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
+
+        # Update the current trace with all improvements
+        try:
+            langfuse_client.update_current_trace(
+                user_id=trace_user_id,
+                session_id=trace_session_id,
+                tags=tags,
+                metadata=metadata,
+                version=version
+            )
+            print(f"✓ Trace updated with enhanced observability:")
+            print(f"  - User: {trace_user_id}")
+            print(f"  - Session: {trace_session_id}")
+            print(f"  - Tags: {', '.join(tags)}")
+            print(f"  - Version: {version}")
+        except Exception as e:
+            print(f"⚠ Failed to update trace metadata: {e}")
 
     return result
 
