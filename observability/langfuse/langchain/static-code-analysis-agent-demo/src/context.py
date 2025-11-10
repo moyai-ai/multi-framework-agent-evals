@@ -87,6 +87,11 @@ class AnalysisContext:
 class Config:
     """Configuration management for the agent."""
 
+    # Agent Identity (for automatic observability)
+    AGENT_NAME: str = "static-code-analysis-agent"
+    AGENT_DEMO_NAME: str = "langchain-static-code-analysis-agent-demo"
+    AGENT_VERSION: str = "1.0.0"
+
     # OpenAI Configuration
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     MODEL_NAME: str = os.getenv("MODEL_NAME", "gpt-4-turbo-preview")

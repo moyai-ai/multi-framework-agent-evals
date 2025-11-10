@@ -175,6 +175,25 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
 
     async def action_node(state: AgentState) -> AgentState:
         """Node for executing tools based on LLM decision."""
+        # Start span for action node if Langfuse is enabled
+        span_context = None
+        if langfuse_client:
+            # Get the last message which should contain tool calls
+            last_message = state["messages"][-1]
+            tool_calls_info = []
+            if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
+                tool_calls_info = [tc.get('name', str(tc)) for tc in last_message.tool_calls]
+
+            span_context = langfuse_client.start_as_current_span(
+                name="action-node",
+                input={
+                    "current_step": state['current_step'],
+                    "tool_calls": tool_calls_info,
+                    "num_tools": len(tool_calls_info)
+                }
+            )
+            span_context.__enter__()
+
         # Get the last message which should contain tool calls
         last_message = state["messages"][-1]
 
@@ -191,16 +210,57 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
                     tool_call.get("args", {})
                 )
 
+            if span_context:
+                try:
+                    span_context.update(
+                        output={
+                            "tools_executed": [tc["name"] for tc in last_message.tool_calls],
+                            "num_results": len(last_message.tool_calls)
+                        }
+                    )
+                except Exception:
+                    pass
+                finally:
+                    span_context.__exit__(None, None, None)
+
             return result
+
+        if span_context:
+            try:
+                span_context.update(output={"status": "no_tool_calls"})
+            except Exception:
+                pass
+            finally:
+                span_context.__exit__(None, None, None)
 
         return state
 
     async def observation_node(state: AgentState) -> AgentState:
         """Node for observing results and updating state."""
+        # Start span for observation node if Langfuse is enabled
+        span_context = None
+        if langfuse_client:
+            span_context = langfuse_client.start_as_current_span(
+                name="observation-node",
+                input={
+                    "current_step": state['current_step'],
+                    "files_analyzed": len(state['files_analyzed']),
+                    "issues_found": len(state['issues_found'])
+                }
+            )
+            span_context.__enter__()
+
         # Process ALL tool execution results (may be multiple from parallel tool calls)
         tool_messages = [msg for msg in state["messages"] if isinstance(msg, ToolMessage)]
 
         if not tool_messages:
+            if span_context:
+                try:
+                    span_context.update(output={"status": "no_tool_messages"})
+                except Exception:
+                    pass
+                finally:
+                    span_context.__exit__(None, None, None)
             return state
 
         # Process the most recent batch of tool messages
@@ -261,10 +321,37 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
 
         print(f"  Total Progress: {len(state['files_analyzed'])}/{len(state['files_to_analyze'])} files, {len(state['issues_found'])} issues")
 
+        if span_context:
+            try:
+                span_context.update(
+                    output={
+                        "files_processed": len(state['files_analyzed']),
+                        "new_issues": len(state['issues_found']),
+                        "files_to_analyze": len(state['files_to_analyze'])
+                    }
+                )
+            except Exception:
+                pass
+            finally:
+                span_context.__exit__(None, None, None)
+
         return state
 
     async def report_node(state: AgentState) -> AgentState:
         """Node for generating the final report."""
+        # Start span for report node if Langfuse is enabled
+        span_context = None
+        if langfuse_client:
+            span_context = langfuse_client.start_as_current_span(
+                name="report-node",
+                input={
+                    "files_analyzed": len(state['files_analyzed']),
+                    "issues_found": len(state['issues_found']),
+                    "analysis_type": state["analysis_type"]
+                }
+            )
+            span_context.__enter__()
+
         # Generate summary of findings
         issues_summary = await analysis_tools.summarize_findings.ainvoke(state["issues_found"])
 
@@ -280,9 +367,27 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
             HumanMessage(content=report_prompt)
         ]
 
-        response = await llm.ainvoke(messages)
+        # Call LLM with Langfuse callback if available
+        if langfuse_handler:
+            response = await llm.ainvoke(messages, config={"callbacks": [langfuse_handler]})
+        else:
+            response = await llm.ainvoke(messages)
+
         state["final_answer"] = response.content
         state["should_continue"] = False
+
+        if span_context:
+            try:
+                span_context.update(
+                    output={
+                        "report_generated": True,
+                        "report_length": len(response.content)
+                    }
+                )
+            except Exception:
+                pass
+            finally:
+                span_context.__exit__(None, None, None)
 
         return state
 
@@ -459,10 +564,11 @@ async def run_agent(
             all_tags.append(f"scenario:{scenario_name}")
         all_tags.extend(additional_tags)
 
-        # Prepare metadata
+        # Prepare metadata (use config for agent identity)
         metadata = {
-            "agent": "static-code-analysis-agent",
-            "demo_name": "langchain-static-code-analysis-agent-demo",
+            "agent": config.AGENT_NAME,
+            "demo_name": config.AGENT_DEMO_NAME,
+            "version": config.AGENT_VERSION,
             "scenario": scenario_name,
             "repository": {
                 "url": repository_url,
