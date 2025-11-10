@@ -338,7 +338,8 @@ async def run_agent(
     analysis_type: str = "security",
     config: Optional[Config] = None,
     user_id: Optional[str] = None,
-    session_id: Optional[str] = None
+    session_id: Optional[str] = None,
+    scenario_name: Optional[str] = None
 ) -> Dict[str, Any]:
     """Run the ReAct agent for code analysis with Langfuse tracing.
 
@@ -348,6 +349,7 @@ async def run_agent(
         config: Configuration object
         user_id: Optional user identifier for tracking usage per user
         session_id: Optional session identifier for grouping related analyses
+        scenario_name: Optional scenario name for test/evaluation tracking
     """
     if config is None:
         config = Config()
@@ -364,10 +366,20 @@ async def run_agent(
         os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
         os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
 
-        # Initialize handler (will create traces automatically)
+        # Initialize handler and client
         langfuse_handler = CallbackHandler()
         langfuse_client = get_client()
-        print("✓ Langfuse tracing enabled for analysis")
+
+        # Build descriptive trace name
+        repo_parts = repository_url.rstrip('/').split('/')
+        repo_name = f"{repo_parts[-2]}/{repo_parts[-1]}" if len(repo_parts) >= 2 else "unknown-repo"
+
+        trace_name = f"static-code-analysis-agent: {analysis_type} analysis"
+        if scenario_name:
+            trace_name = f"{trace_name} [{scenario_name}]"
+        trace_name = f"{trace_name} - {repo_name}"
+
+        print(f"✓ Langfuse tracing enabled: {trace_name}")
 
     # Create initial state
     initial_state = create_initial_state(
@@ -403,23 +415,27 @@ async def run_agent(
     if langfuse_client:
         from datetime import datetime
 
+        # Build descriptive trace name
+        repo_parts = repository_url.rstrip('/').split('/')
+        repo_name = f"{repo_parts[-2]}/{repo_parts[-1]}" if len(repo_parts) >= 2 else "unknown-repo"
+
+        trace_name = f"static-code-analysis-agent: {analysis_type} analysis"
+        if scenario_name:
+            trace_name = f"{trace_name} [{scenario_name}]"
+        trace_name = f"{trace_name} - {repo_name}"
+
         # Set user and session IDs
         trace_user_id = user_id or "anonymous"
         trace_session_id = session_id or f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         # Prepare tags
-        tags = [
-            "static-analysis",
-            analysis_type,  # security, quality, or dependencies
-            "langgraph",
-            "production",  # Can be made configurable via environment variable
-        ]
+        additional_tags = []
 
         # Add status tags
         if final_state.get("error"):
-            tags.append("error")
+            additional_tags.append("error")
         else:
-            tags.append("success")
+            additional_tags.append("success")
 
         # Add severity tags based on issues found
         severity_counts = {}
@@ -428,12 +444,26 @@ async def run_agent(
             severity_counts[severity] = severity_counts.get(severity, 0) + 1
 
         if severity_counts.get("CRITICAL", 0) > 0:
-            tags.append("has-critical-issues")
+            additional_tags.append("has-critical-issues")
         if severity_counts.get("HIGH", 0) > 0:
-            tags.append("has-high-issues")
+            additional_tags.append("has-high-issues")
+
+        # Combine with initial tags
+        all_tags = [
+            "static-analysis",
+            analysis_type,
+            "langgraph",
+            "production",
+        ]
+        if scenario_name:
+            all_tags.append(f"scenario:{scenario_name}")
+        all_tags.extend(additional_tags)
 
         # Prepare metadata
         metadata = {
+            "agent": "static-code-analysis-agent",
+            "demo_name": "langchain-static-code-analysis-agent-demo",
+            "scenario": scenario_name,
             "repository": {
                 "url": repository_url,
                 "owner": final_state["repository_owner"],
@@ -469,16 +499,19 @@ async def run_agent(
         # Update the current trace with all improvements
         try:
             langfuse_client.update_current_trace(
+                name=trace_name,
                 user_id=trace_user_id,
                 session_id=trace_session_id,
-                tags=tags,
+                tags=all_tags,
                 metadata=metadata,
                 version=version
             )
             print(f"✓ Trace updated with enhanced observability:")
+            print(f"  - Name: {trace_name}")
             print(f"  - User: {trace_user_id}")
             print(f"  - Session: {trace_session_id}")
-            print(f"  - Tags: {', '.join(tags)}")
+            print(f"  - Scenario: {scenario_name or 'N/A'}")
+            print(f"  - Tags: {', '.join(all_tags)}")
             print(f"  - Version: {version}")
         except Exception as e:
             print(f"⚠ Failed to update trace metadata: {e}")

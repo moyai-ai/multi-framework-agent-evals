@@ -156,28 +156,32 @@ uv run --env-file .env python -m src.manager "https://github.com/example/repo" -
 
 ### Enhanced Observability (Phase 1)
 
-Track user activity and group analyses into sessions:
+Track user activity, group analyses into sessions, and identify scenarios:
 
 ```bash
-# With user and session tracking
+# With user, session, and scenario tracking
 uv run --env-file .env python -m src.manager "https://github.com/example/repo" \
   --type security \
   --user-id "alice@example.com" \
-  --session-id "sprint-review-2024-01"
+  --session-id "sprint-review-2024-01" \
+  --scenario "pre-release-security-audit"
 
 # Test the improvements
 uv run --env-file .env python test_enhanced_observability.py
 ```
 
+**Trace Name**: `static-code-analysis-agent: security analysis [pre-release-security-audit] - example/repo`
+
 **Benefits**:
+- **Descriptive trace names** with agent, analysis type, scenario, and repository
 - Track usage and costs per user
 - Group related analyses into sessions
-- Filter traces by user/session in Langfuse UI
-- Automatic tagging by analysis type, status, and severity
+- Filter traces by user/session/scenario in Langfuse UI
+- Automatic tagging by analysis type, status, severity, and scenario
 - Rich metadata with repository details and results breakdown
 - Version tracking for A/B testing
 
-See [PHASE1_IMPROVEMENTS.md](./PHASE1_IMPROVEMENTS.md) for full details.
+See [PHASE1_IMPROVEMENTS.md](./PHASE1_IMPROVEMENTS.md) and [TRACE_NAMING.md](./TRACE_NAMING.md) for full details.
 
 ### Python API
 
@@ -194,12 +198,13 @@ async def main():
     # Create manager
     manager = AnalysisManager(config=config, verbose=True)
 
-    # Run analysis with tracing and user/session tracking
+    # Run analysis with full observability tracking
     result = await manager.analyze_repository(
         repository_url="https://github.com/example/repo",
         analysis_type="security",
         user_id="alice@example.com",  # Optional, defaults to "anonymous"
-        session_id="sprint-review-2024-01"  # Optional, auto-generated if not provided
+        session_id="sprint-review-2024-01",  # Optional, auto-generated if not provided
+        scenario_name="pre-release-security-audit"  # Optional, for test/evaluation tracking
     )
 
     print(f"Trace captured in Langfuse!")

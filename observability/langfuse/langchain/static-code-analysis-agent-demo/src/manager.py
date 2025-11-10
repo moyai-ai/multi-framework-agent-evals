@@ -35,6 +35,7 @@ class AnalysisManager:
         analysis_type: str = "security",
         user_id: Optional[str] = None,
         session_id: Optional[str] = None,
+        scenario_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Analyze a GitHub repository.
@@ -44,11 +45,14 @@ class AnalysisManager:
             analysis_type: Type of analysis (security, quality, dependencies)
             user_id: Optional user identifier for tracking (enhances observability)
             session_id: Optional session identifier for grouping analyses (enhances observability)
+            scenario_name: Optional scenario name for test/evaluation tracking
 
         Returns:
             Analysis results dictionary
         """
         self._log(f"Starting {analysis_type} analysis for: {repository_url}")
+        if scenario_name:
+            self._log(f"Scenario: {scenario_name}")
 
         try:
             # Run the agent
@@ -57,7 +61,8 @@ class AnalysisManager:
                 analysis_type=analysis_type,
                 config=self.config,
                 user_id=user_id,
-                session_id=session_id
+                session_id=session_id,
+                scenario_name=scenario_name
             )
 
             self._log("\nAnalysis completed successfully!")
@@ -137,6 +142,12 @@ async def main():
         default=None,
         help="Session identifier for grouping analyses (enhances Langfuse observability)",
     )
+    parser.add_argument(
+        "--scenario",
+        dest="scenario_name",
+        default=None,
+        help="Scenario name for test/evaluation tracking (enhances Langfuse observability)",
+    )
 
     args = parser.parse_args()
 
@@ -149,6 +160,7 @@ async def main():
         analysis_type=args.analysis_type,
         user_id=args.user_id,
         session_id=args.session_id,
+        scenario_name=args.scenario_name,
     )
 
     # Exit with error code if analysis failed
