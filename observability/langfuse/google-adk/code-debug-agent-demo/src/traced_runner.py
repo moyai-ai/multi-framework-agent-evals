@@ -12,6 +12,7 @@ import asyncio
 import logging
 from typing import Optional, Dict, Any, AsyncIterator
 from google.adk.runners import InMemoryRunner
+from google.genai import types
 from langfuse import observe, get_client
 from src.agents import debug_agent, quick_debug_agent, AGENTS
 
@@ -110,16 +111,24 @@ class TracedAgentRunner:
             )
 
             logger.info(
-                f"Created session: {session.session_id} for user: {user_id or 'user123'}"
+                f"Created session: {session.id} for user: {user_id or 'user123'}"
             )
 
             # Track execution metrics
             event_count = 0
             response_parts = []
 
+            # Create proper Content object for the message
+            content = types.Content(
+                parts=[types.Part(text=prompt)],
+                role="user"
+            )
+
             # Run the agent and track events
             async for event in self.runner.run_async(
-                session_id=session.session_id, prompt=prompt
+                user_id=user_id or "user123",
+                session_id=session.id,
+                new_message=content
             ):
                 event_count += 1
 
