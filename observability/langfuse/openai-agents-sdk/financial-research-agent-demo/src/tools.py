@@ -10,10 +10,9 @@ from agents import function_tool, RunContextWrapper
 from .context import FinancialResearchContext
 import random
 from datetime import datetime
-from langfuse import observe, get_client
+from langfuse import get_client
 
 
-@observe(as_type="tool")
 @function_tool(
     name_override="web_search_tool",
     description_override="Search the web for financial information, company data, and market analysis"
@@ -69,7 +68,6 @@ async def web_search_tool(query: str) -> str:
     return output
 
 
-@observe(as_type="tool")
 @function_tool(
     name_override="company_financials_tool",
     description_override="Analyze company financial metrics including revenue, profit margins, cash flow, and growth rates"
@@ -196,7 +194,6 @@ Growth Profile:
     return analysis
 
 
-@observe(as_type="tool")
 @function_tool(
     name_override="risk_analysis_tool",
     description_override="Assess business risks including market, operational, financial, and competitive risks"
@@ -325,7 +322,6 @@ Overall Risk Rating: MODERATE
     return analysis
 
 
-@observe(as_type="tool")
 @function_tool(
     name_override="market_data_tool",
     description_override="Get current market data including stock prices, market cap, and trading volumes"
