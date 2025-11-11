@@ -1,0 +1,28 @@
+{
+  "name": "Company Analysis - Apple Inc",
+  "description": "Comprehensive financial analysis of Apple Inc's Q4 2024 performance",
+  "query": "Analyze Apple Inc's most recent quarter financial performance",
+  "expectations": {
+    "min_search_terms": 3,
+    "required_sections": [
+      "Executive Summary",
+      "Financial Performance",
+      "Risk Assessment",
+      "Conclusion"
+    ],
+    "verification_should_pass": true,
+    "min_report_length": 500,
+    "required_keywords": [
+      "Apple",
+      "revenue",
+      "iPhone",
+      "services"
+    ]
+  },
+  "metadata": {
+    "test_type": "company_analysis",
+    "priority": "high",
+    "estimated_duration": 60,
+    "tags": ["company", "earnings", "technology"]
+  }
+}

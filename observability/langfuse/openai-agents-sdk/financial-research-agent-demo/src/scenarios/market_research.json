@@ -1,0 +1,27 @@
+{
+  "name": "Market Research - AI Semiconductors",
+  "description": "Analysis of AI semiconductor market trends and growth prospects",
+  "query": "Research the AI semiconductor market trends and key players",
+  "expectations": {
+    "min_search_terms": 3,
+    "required_sections": [
+      "Executive Summary",
+      "Market Position",
+      "Conclusion"
+    ],
+    "verification_should_pass": true,
+    "min_report_length": 500,
+    "required_keywords": [
+      "AI",
+      "semiconductor",
+      "market",
+      "NVIDIA"
+    ]
+  },
+  "metadata": {
+    "test_type": "market_research",
+    "priority": "medium",
+    "estimated_duration": 60,
+    "tags": ["market", "semiconductors", "AI", "technology"]
+  }
+}
