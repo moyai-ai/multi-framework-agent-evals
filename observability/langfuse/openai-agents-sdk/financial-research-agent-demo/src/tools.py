@@ -33,10 +33,9 @@ async def web_search_tool(query: str) -> str:
     """
     langfuse = get_client()
 
-    # Update current observation with metadata
-    langfuse.update_current_observation(
-        metadata={"query": query, "tool_type": "web_search"},
-        input={"query": query}
+    # Update current span with metadata
+    langfuse.update_current_span(
+        metadata={"query": query, "tool_type": "web_search"}
     )
 
     # Mock search results based on query keywords
@@ -62,9 +61,9 @@ async def web_search_tool(query: str) -> str:
     formatted_results = "\n\n".join([f"• {result}" for result in results])
     output = f"Search Results for '{query}':\n\n{formatted_results}\n\nSource: Mock Financial Data (Generated: {datetime.now().strftime('%Y-%m-%d')})"
 
-    # Update observation with output
-    langfuse.update_current_observation(
-        output={"results": output, "num_results": len(results)}
+    # Update span with output
+    langfuse.update_current_span(
+        metadata={"num_results": len(results)}
     )
 
     return output
@@ -93,14 +92,13 @@ async def company_financials_tool(
     """
     langfuse = get_client()
 
-    # Update current observation with metadata
-    langfuse.update_current_observation(
+    # Update current span with metadata
+    langfuse.update_current_span(
         metadata={
             "company_name": company_name,
             "tool_type": "financials_analysis",
             "trace_id": context.context.trace_id
-        },
-        input={"company_name": company_name}
+        }
     )
 
     # Update context
@@ -195,11 +193,6 @@ Growth Profile:
     # Store in context
     context.context.financials_analysis = analysis
 
-    # Update observation with output
-    langfuse.update_current_observation(
-        output={"analysis": analysis, "company": company_name}
-    )
-
     return analysis
 
 
@@ -226,14 +219,13 @@ async def risk_analysis_tool(
     """
     langfuse = get_client()
 
-    # Update current observation with metadata
-    langfuse.update_current_observation(
+    # Update current span with metadata
+    langfuse.update_current_span(
         metadata={
             "company_name": company_name,
             "tool_type": "risk_analysis",
             "trace_id": context.context.trace_id
-        },
-        input={"company_name": company_name}
+        }
     )
 
     company_lower = company_name.lower()
@@ -330,11 +322,6 @@ Overall Risk Rating: MODERATE
     # Store in context
     context.context.risk_analysis = analysis
 
-    # Update observation with output
-    langfuse.update_current_observation(
-        output={"analysis": analysis, "company": company_name}
-    )
-
     return analysis
 
 
@@ -357,10 +344,9 @@ async def market_data_tool(ticker: str) -> str:
     """
     langfuse = get_client()
 
-    # Update current observation with metadata
-    langfuse.update_current_observation(
-        metadata={"ticker": ticker, "tool_type": "market_data"},
-        input={"ticker": ticker}
+    # Update current span with metadata
+    langfuse.update_current_span(
+        metadata={"ticker": ticker, "tool_type": "market_data"}
     )
 
     # Mock market data
@@ -394,11 +380,6 @@ YTD Return: {random.uniform(-10, 50):+.1f}%
 Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Source: Mock Market Data
 """
-
-    # Update observation with output
-    langfuse.update_current_observation(
-        output={"market_data": market_data, "ticker": ticker.upper(), "price": price}
-    )
 
     return market_data
 

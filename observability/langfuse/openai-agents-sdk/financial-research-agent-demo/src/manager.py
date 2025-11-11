@@ -200,7 +200,7 @@ class FinancialResearchManager:
             List of search terms
         """
         langfuse = get_client()
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             input={"query": query},
             metadata={"agent": "planner", "step": "planning"}
         )
@@ -249,7 +249,7 @@ class FinancialResearchManager:
                 self._print(f"  • {term}")
 
         # Update observation with output
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             output={"search_terms": search_terms, "count": len(search_terms)}
         )
 
@@ -267,7 +267,7 @@ class FinancialResearchManager:
             Dict mapping search term to results
         """
         langfuse = get_client()
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             input={"search_terms": search_terms, "count": len(search_terms)},
             metadata={"agent": "search", "step": "searching", "concurrent": True}
         )
@@ -289,7 +289,7 @@ class FinancialResearchManager:
                 search_results[term] = result
 
         # Update observation with output
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             output={
                 "search_results": {k: len(v) for k, v in search_results.items()},
                 "successful_searches": len([r for r in results if not isinstance(r, Exception)])
@@ -310,7 +310,7 @@ class FinancialResearchManager:
             Search results
         """
         langfuse = get_client()
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             input={"search_term": search_term},
             metadata={"agent": "search"}
         )
@@ -336,7 +336,7 @@ class FinancialResearchManager:
         output_text = results_text if results_text else "No results found"
 
         # Update observation with output
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             output={"results": output_text, "length": len(output_text)}
         )
 
@@ -355,7 +355,7 @@ class FinancialResearchManager:
             Formatted report
         """
         langfuse = get_client()
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             input={
                 "query": query,
                 "search_results_count": len(search_results)
@@ -407,7 +407,7 @@ Remember: Use the tools to get real data, then cite your sources in the report.
         output_report = report if report else "Error: No report generated"
 
         # Update observation with output
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             output={
                 "report": output_report,
                 "length": len(output_report),
@@ -429,7 +429,7 @@ Remember: Use the tools to get real data, then cite your sources in the report.
             Verification results
         """
         langfuse = get_client()
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             input={"report_length": len(report)},
             metadata={"agent": "verifier", "step": "verifying"}
         )
@@ -468,7 +468,7 @@ Provide verification status and any issues found.
         }
 
         # Update observation with output
-        langfuse.update_current_observation(
+        langfuse.update_current_span(
             output=verification_result
         )
 
