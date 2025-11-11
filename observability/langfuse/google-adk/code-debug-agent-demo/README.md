@@ -1,6 +1,21 @@
-# Code Debug Agent Demo - Google ADK
+# Code Debug Agent Demo - Google ADK (Langfuse Traced)
 
-An intelligent debugging assistant built with Google's Agent Development Kit (ADK) that helps developers resolve coding errors by searching Stack Exchange for proven solutions.
+🔍 **An intelligent debugging assistant with comprehensive Langfuse observability**
+
+This is a fully instrumented version of the Google ADK Code Debug Agent with complete Langfuse tracing for production monitoring and learning about agent behavior.
+
+> **Note**: This is the traced version. For the original untraced agent, see `frameworks/google-adk/code-debug-agent-demo/`
+
+## What Makes This Different?
+
+✅ **Full Observability**: Every agent action traced with Langfuse
+✅ **Tool Tracking**: All tool calls monitored with inputs/outputs
+✅ **RAG Visibility**: Stack Exchange retrievals tracked as retriever operations
+✅ **Error Capture**: Comprehensive error tracking in production
+✅ **Performance Metrics**: Execution time, latency, and throughput analysis
+✅ **User Context**: Session and user tracking for debugging
+
+See [COMPARISON.md](../COMPARISON.md) for detailed comparison with the original agent.
 
 ## Features
 
@@ -28,13 +43,28 @@ This agent follows Google ADK patterns and includes:
 - Python 3.11 or higher
 - [uv](https://docs.astral.sh/uv/) package manager
 - Google API key for Gemini models
+- **Langfuse account** (free tier available at https://cloud.langfuse.com)
+- **Langfuse API keys** (public and secret)
 - (Optional) Stack Exchange API key for higher rate limits
 
 ### Setup
 
 ```bash
-# Install dependencies
+# 1. Copy and configure environment
+cp .env.example .env
+# Edit .env with:
+#   - GOOGLE_API_KEY
+#   - LANGFUSE_PUBLIC_KEY
+#   - LANGFUSE_SECRET_KEY
+#   - LANGFUSE_HOST
+
+# 2. Install dependencies
 unset VIRTUAL_ENV && uv sync
+
+# 3. Run the example (recommended first step!)
+unset VIRTUAL_ENV && uv run python example_traced_usage.py
+
+# 4. View traces in Langfuse dashboard
 ```
 
 ## Usage
