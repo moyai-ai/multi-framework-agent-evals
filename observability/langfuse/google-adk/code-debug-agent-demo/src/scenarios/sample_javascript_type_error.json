@@ -1,0 +1,21 @@
+{
+  "name": "JavaScript TypeError",
+  "description": "Test handling of JavaScript type errors",
+  "error_message": "TypeError: Cannot read property 'map' of undefined",
+  "programming_language": "javascript",
+  "framework": "react",
+  "conversation": [
+    {
+      "user_input": "TypeError: Cannot read property 'map' of undefined in React",
+      "expected_tools": [
+        "search_stack_exchange_for_error",
+        "analyze_error_and_suggest_fix"
+      ],
+      "expected_keywords": [
+        "undefined",
+        "map",
+        "array"
+      ]
+    }
+  ]
+}

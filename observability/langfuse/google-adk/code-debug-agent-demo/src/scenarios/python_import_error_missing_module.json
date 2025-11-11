@@ -1,0 +1,17 @@
+{
+  "name": "Python ImportError - Missing Module",
+  "description": "Common Python import error for missing packages",
+  "error_message": "ImportError: No module named 'pandas'",
+  "programming_language": "python",
+  "conversation": [
+    {
+      "user_input": "I'm getting this error when running my Python script: ImportError: No module named 'pandas'",
+      "expected_tools": ["search_stack_exchange_for_error", "analyze_error_and_suggest_fix"],
+      "expected_keywords": ["pip install pandas", "virtual environment", "ImportError"]
+    }
+  ],
+  "metadata": {
+    "difficulty": "easy",
+    "category": "package_management"
+  }
+}

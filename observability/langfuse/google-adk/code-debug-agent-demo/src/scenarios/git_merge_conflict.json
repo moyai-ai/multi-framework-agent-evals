@@ -1,0 +1,17 @@
+{
+  "name": "Git Merge Conflict",
+  "description": "Git merge conflict resolution",
+  "error_message": "CONFLICT (content): Merge conflict in app.js",
+  "programming_language": null,
+  "conversation": [
+    {
+      "user_input": "Git error: CONFLICT (content): Merge conflict in app.js\nAutomatic merge failed; fix conflicts and then commit the result",
+      "expected_tools": ["search_stack_exchange_general"],
+      "expected_keywords": ["merge conflict", "git", "resolve", "markers"]
+    }
+  ],
+  "metadata": {
+    "difficulty": "medium",
+    "category": "version_control"
+  }
+}

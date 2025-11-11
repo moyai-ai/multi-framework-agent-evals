@@ -1,0 +1,18 @@
+{
+  "name": "Node.js Module Resolution Error",
+  "description": "Module not found error in Node.js",
+  "error_message": "Error: Cannot find module 'express'",
+  "programming_language": "javascript",
+  "framework": "node",
+  "conversation": [
+    {
+      "user_input": "Node.js error: Error: Cannot find module 'express'\nRequire stack:\n- /app/server.js",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["npm install", "express", "node_modules", "package.json"]
+    }
+  ],
+  "metadata": {
+    "difficulty": "easy",
+    "category": "package_management"
+  }
+}

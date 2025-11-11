@@ -1,0 +1,17 @@
+{
+  "name": "TypeScript Type Error",
+  "description": "TypeScript type mismatch error",
+  "error_message": "Type 'string' is not assignable to type 'number'",
+  "programming_language": "typescript",
+  "conversation": [
+    {
+      "user_input": "TypeScript compilation error: Type 'string' is not assignable to type 'number' at line 42",
+      "expected_tools": ["search_stack_exchange_general", "analyze_error_and_suggest_fix"],
+      "expected_keywords": ["type", "TypeScript", "type conversion", "parseInt", "Number()"]
+    }
+  ],
+  "metadata": {
+    "difficulty": "medium",
+    "category": "type_error"
+  }
+}
