@@ -1,0 +1,73 @@
+{
+  "name": "Security Vulnerability Detection",
+  "description": "Test the agent's ability to detect common security vulnerabilities in code",
+  "initial_context": {
+    "repository_url": "https://github.com/example/vulnerable-app",
+    "analysis_type": "security"
+  },
+  "conversation": [
+    {
+      "user": "Analyze the repository https://github.com/example/vulnerable-app for security vulnerabilities",
+      "expected": {
+        "actions": ["fetch_repository_info", "list_repository_files", "get_file_content", "run_opengrep_analysis"],
+        "findings": ["sql-injection", "hardcoded-secret", "xss-vulnerability", "command-injection"],
+        "severity_contains": ["CRITICAL", "HIGH", "ERROR"],
+        "message_contains": ["SQL injection", "hardcoded", "XSS", "command injection"]
+      }
+    },
+    {
+      "user": "What are the most critical issues found?",
+      "expected": {
+        "actions": ["summarize_findings"],
+        "message_contains": ["critical", "command injection", "SQL injection"],
+        "provides_remediation": true
+      }
+    },
+    {
+      "user": "Generate a remediation plan for the critical issues",
+      "expected": {
+        "actions": ["generate_remediation_plan"],
+        "message_contains": ["parameterized queries", "input validation", "environment variables"],
+        "has_prioritization": true
+      }
+    }
+  ],
+  "test_files": {
+    "src/database.py": {
+      "content": "import sqlite3\n\ndef get_user(user_id):\n    conn = sqlite3.connect('users.db')\n    cursor = conn.cursor()\n    # SQL Injection vulnerability\n    query = f\"SELECT * FROM users WHERE id = {user_id}\"\n    cursor.execute(query)\n    return cursor.fetchone()",
+      "expected_issues": [
+        {
+          "type": "sql-injection",
+          "severity": "HIGH",
+          "line_range": [6, 8]
+        }
+      ]
+    },
+    "src/api.py": {
+      "content": "from flask import Flask, request\nimport os\n\napp = Flask(__name__)\n\n# Hardcoded secret\nAPI_KEY = \"sk-1234567890abcdef\"\n\n@app.route('/search')\ndef search():\n    query = request.args.get('q', '')\n    # XSS vulnerability\n    return f\"<h1>Search results for: {query}</h1>\"\n\n@app.route('/exec')\ndef execute():\n    cmd = request.args.get('cmd', '')\n    # Command injection\n    result = os.system(cmd)\n    return {\"result\": result}",
+      "expected_issues": [
+        {
+          "type": "hardcoded-secret",
+          "severity": "HIGH",
+          "line_range": [6, 7]
+        },
+        {
+          "type": "xss-vulnerability",
+          "severity": "HIGH",
+          "line_range": [12, 13]
+        },
+        {
+          "type": "command-injection",
+          "severity": "CRITICAL",
+          "line_range": [18, 19]
+        }
+      ]
+    }
+  },
+  "metadata": {
+    "test_type": "security",
+    "priority": "high",
+    "estimated_duration": 60,
+    "tags": ["OWASP", "security", "vulnerabilities"]
+  }
+}
