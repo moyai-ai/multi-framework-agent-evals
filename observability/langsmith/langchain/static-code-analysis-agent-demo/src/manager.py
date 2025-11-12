@@ -51,7 +51,7 @@ class AnalysisManager:
             result = await run_agent(
                 repository_url=repository_url,
                 analysis_type=analysis_type,
-                config=self.config
+                app_config=self.config
             )
 
             self._log("\nAnalysis completed successfully!")

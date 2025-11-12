@@ -301,7 +301,7 @@ def create_agent(config: Optional[Config] = None):
 async def run_agent(
     repository_url: str,
     analysis_type: str = "security",
-    config: Optional[Config] = None,
+    app_config: Optional[Config] = None,
     user_id: Optional[str] = None,
     session_id: Optional[str] = None,
     scenario_name: Optional[str] = None
@@ -311,7 +311,7 @@ async def run_agent(
     Args:
         repository_url: The GitHub repository URL to analyze
         analysis_type: Type of analysis (security, quality, dependencies)
-        config: Configuration object
+        app_config: Configuration object
         user_id: Optional user identifier for tracking usage per user
         session_id: Optional session identifier for grouping related analyses
         scenario_name: Optional scenario name for test/evaluation tracking
@@ -319,19 +319,19 @@ async def run_agent(
     Returns:
         Analysis results with instrumentation metadata
     """
-    if config is None:
-        config = Config()
+    if app_config is None:
+        app_config = Config()
 
     # Initialize LangSmith client if enabled
     langsmith_client = None
-    if config.LANGSMITH_ENABLED and config.LANGSMITH_API_KEY:
+    if app_config.LANGSMITH_ENABLED and app_config.LANGSMITH_API_KEY:
         from datetime import datetime
 
         # Set environment variables for automatic tracing
         os.environ["LANGSMITH_TRACING"] = "true"
-        os.environ["LANGSMITH_API_KEY"] = config.LANGSMITH_API_KEY
-        os.environ["LANGSMITH_PROJECT"] = config.LANGSMITH_PROJECT
-        os.environ["LANGSMITH_ENDPOINT"] = config.LANGSMITH_ENDPOINT
+        os.environ["LANGSMITH_API_KEY"] = app_config.LANGSMITH_API_KEY
+        os.environ["LANGSMITH_PROJECT"] = app_config.LANGSMITH_PROJECT
+        os.environ["LANGSMITH_ENDPOINT"] = app_config.LANGSMITH_ENDPOINT
 
         # Create client for metadata enrichment
         langsmith_client = Client()
@@ -349,7 +349,7 @@ async def run_agent(
     )
 
     # Create agent
-    agent = create_agent(config)
+    agent = create_agent(app_config)
 
     # Run the agent with tags and metadata via config
     # LangSmith automatically captures this via environment variables
@@ -363,14 +363,14 @@ async def run_agent(
             "production",
         ],
         "metadata": {
-            "agent": config.AGENT_NAME,
-            "demo_name": config.AGENT_DEMO_NAME,
-            "version": config.AGENT_VERSION,
+            "agent": app_config.AGENT_NAME,
+            "demo_name": app_config.AGENT_DEMO_NAME,
+            "version": app_config.AGENT_VERSION,
             "scenario": scenario_name,
             "repository_url": repository_url,
             "analysis_type": analysis_type,
-            "model": config.MODEL_NAME,
-            "temperature": config.TEMPERATURE,
+            "model": app_config.MODEL_NAME,
+            "temperature": app_config.TEMPERATURE,
         }
     }
 
@@ -435,8 +435,8 @@ async def run_agent(
 def run_agent_sync(
     repository_url: str,
     analysis_type: str = "security",
-    config: Optional[Config] = None
+    app_config: Optional[Config] = None
 ) -> Dict[str, Any]:
     """Synchronous wrapper for running the agent."""
     import asyncio
-    return asyncio.run(run_agent(repository_url, analysis_type, config))
+    return asyncio.run(run_agent(repository_url, analysis_type, app_config))
