@@ -1,0 +1,17 @@
+{
+  "name": "CORS Error in Browser",
+  "description": "Cross-Origin Resource Sharing error",
+  "error_message": "Access to fetch at 'http://api.example.com' from origin 'http://localhost:3000' has been blocked by CORS policy",
+  "programming_language": "javascript",
+  "conversation": [
+    {
+      "user_input": "Browser console error: Access to fetch at 'http://api.example.com' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header",
+      "expected_tools": ["search_stack_exchange_for_error", "search_stack_exchange_general"],
+      "expected_keywords": ["CORS", "Access-Control-Allow-Origin", "proxy", "headers"]
+    }
+  ],
+  "metadata": {
+    "difficulty": "medium",
+    "category": "network_error"
+  }
+}

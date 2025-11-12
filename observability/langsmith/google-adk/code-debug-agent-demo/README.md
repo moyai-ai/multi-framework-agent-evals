@@ -1,297 +1,420 @@
-# Code Debug Agent Demo - Google ADK
+# Code Debug Agent Demo with LangSmith Observability
 
-An intelligent debugging assistant built with Google's Agent Development Kit (ADK) that helps developers resolve coding errors by searching Stack Exchange for proven solutions.
+A Google Agent Development Kit (ADK) debugging agent with comprehensive LangSmith observability. This agent searches Stack Exchange to help developers debug code errors, with full tracing of agent execution, tool calls, and LLM generations.
 
 ## Features
 
-- **Error Analysis**: Automatically analyzes error messages to identify key components and search terms
-- **Stack Exchange Integration**: Searches Stack Overflow and other Stack Exchange sites for relevant solutions
-- **Multi-Language Support**: Handles errors from Python, JavaScript, TypeScript, Java, and more
-- **Framework-Aware**: Recognizes framework-specific errors (React, Django, Node.js, etc.)
-- **Solution Ranking**: Prioritizes accepted answers and highly-voted solutions
-- **Comprehensive Tools**: Multiple specialized tools for different debugging scenarios
+- **Error-Specific Search**: Intelligent keyword extraction from error messages
+- **Multi-Source Results**: Stack Overflow, ServerFault, and other Stack Exchange sites
+- **Solution Ranking**: Prioritizes accepted answers and high-vote solutions
+- **Framework-Aware**: Filters by programming language and framework
+- **LangSmith Observability**: Full tracing of agent workflows, tool calls, and RAG operations
 
 ## Architecture
 
-This agent follows Google ADK patterns and includes:
+### Key Components
 
-- **Debug Agent**: Main agent with comprehensive error analysis capabilities
-- **Quick Debug Agent**: Streamlined agent for fast error lookups
-- **Sequential Debug Agent**: Two-stage agent that analyzes then searches for solutions
-- **Stack Exchange Service**: Async wrapper for Stack Exchange API integration
-- **Scenario Runner**: Testing framework for validating agent behavior
+- **`src/tools.py`**: Stack Exchange search tools with `@traceable` decorators for automatic tracing
+- **`src/agents.py`**: Google ADK agent definitions with traced callbacks
+- **`src/traced_runner.py`**: Advanced runner wrapper for custom tracing scenarios
+- **`src/services/stackexchange_service.py`**: Context provider for RAG operations
+- **`src/runner.py`**: Standard scenario runner with optional `--traced` flag
+
+### What Gets Traced
+
+When running with `--traced` flag, LangSmith captures:
+
+1. **Agent Execution**: Complete workflow including decision-making process
+2. **Tool Calls**: All Stack Exchange searches (RAG/context provider operations)
+3. **LLM Generations**: Gemini model invocations with token usage and latency
+4. **Callbacks**: Response formatting and post-processing operations
+5. **Errors**: Full exception traces with context
+
+## Prerequisites
+
+- Python 3.11+
+- LangSmith account and API key ([sign up](https://smith.langchain.com))
+- Google Gemini API key ([get key](https://aistudio.google.com/app/apikey))
+- Stack Exchange API key (optional, for higher rate limits)
 
 ## Installation
 
-### Prerequisites
-
-- Python 3.11 or higher
-- [uv](https://docs.astral.sh/uv/) package manager
-- Google API key for Gemini models
-- (Optional) Stack Exchange API key for higher rate limits
-
-### Setup
-
 ```bash
 # Install dependencies
-unset VIRTUAL_ENV && uv sync
+pip install -e .
+
+# Or with uv
+uv sync
 ```
+
+## Configuration
+
+Create a `.env` file (see `.env.example`):
+
+```env
+# LangSmith Configuration
+LANGSMITH_API_KEY=ls_your_api_key_here
+LANGSMITH_PROJECT=code-debug-agent
+LANGSMITH_TRACING=true
+
+# Google Gemini Configuration (using direct API, not Vertex AI)
+GOOGLE_API_KEY=your-google-api-key-here
+GOOGLE_MODEL=gemini-2.0-flash
+GOOGLE_GENAI_USE_VERTEXAI=0
+
+# Stack Exchange (optional)
+STACKEXCHANGE_API_KEY=your_stackexchange_key_here
+```
+
+**Get API Keys:**
+- **LangSmith**: https://smith.langchain.com/settings
+- **Google Gemini**: https://aistudio.google.com/app/apikey
+- **Stack Exchange**: https://stackapps.com/apps/oauth/register
 
 ## Usage
 
-### Running the Agent
+### Running Scenarios with Tracing
 
-#### Interactive Mode
+The recommended way to run scenarios with LangSmith observability is using the `--traced` flag:
 
-Create a Python script (e.g., `run_agent.py`):
+```bash
+# Run all scenarios with LangSmith tracing (recommended with uv)
+unset VIRTUAL_ENV && uv run python -m src.runner --all-scenarios --traced
+
+# Run with specific agent
+unset VIRTUAL_ENV && uv run python -m src.runner --all-scenarios --traced quick_debug_agent
+
+# Run specific scenario file
+unset VIRTUAL_ENV && uv run python -m src.runner src/scenarios/python_import_error_missing_module.json --traced
+
+# Run specific scenario with specific agent
+unset VIRTUAL_ENV && uv run python -m src.runner src/scenarios/javascript_type_error_undefined_property.json --traced debug_agent
+```
+
+**What the `--traced` flag does:**
+- Creates a LangSmith trace for each scenario execution
+- Automatically traces all tool calls via `@traceable` decorators
+- Captures LLM generations, agent workflows, and errors
+- Groups traces by scenario name for easy analysis in LangSmith dashboard
+
+### Running Without Tracing
+
+Omit the `--traced` flag to run scenarios without LangSmith observability:
+
+```bash
+# Run all scenarios (no tracing)
+unset VIRTUAL_ENV && uv run python -m src.runner --all-scenarios
+
+# Run specific scenario (no tracing)
+python -m src.runner src/scenarios/sample_python_import_error.json
+```
+
+### Advanced: Using TracedAgentRunner Directly
+
+For custom use cases, use `src/traced_runner.py` directly:
 
 ```python
 import asyncio
-from google.adk.runners import InMemoryRunner
-from src.agents import debug_agent
+from src.traced_runner import run_debug_agent_traced
 
 async def main():
-    runner = InMemoryRunner(agent=debug_agent, app_name="code-debug-agent")
-    session = await runner.session_service.create_session(
-        app_name="code-debug-agent",
-        user_id="user123"
+    response = await run_debug_agent_traced(
+        prompt="ImportError: No module named 'pandas'",
+        agent_name="debug_agent",
+        user_id="developer_123",
+        session_id="debug_session_001"
     )
-
-    # Ask about an error
-    async for event in runner.run_async(
-        session_id=session.session_id,
-        prompt="I'm getting ImportError: No module named 'pandas'"
-    ):
-        # Process response
-        print(event)
+    print(response)
 
 asyncio.run(main())
 ```
 
-Then run it with uv:
-
-```bash
-uv run python run_agent.py
-```
-
-#### Using the Runner Framework
-
-```bash
-# Run ALL scenario files in src/scenarios/
-unset VIRTUAL_ENV && uv run python -m src.runner --all-scenarios
-
-# Run all scenarios with a specific agent
-unset VIRTUAL_ENV && uv run python -m src.runner --all-scenarios quick_debug_agent
-
-# Run specific scenario file
-unset VIRTUAL_ENV && uv run python -m src.runner src/scenarios/python_attribute_error_missing_method.json
-
-# Use a specific agent with a specific scenario file
-unset VIRTUAL_ENV && uv run python -m src.runner src/scenarios/python_attribute_error_missing_method.json quick_debug_agent
-
-# List available agents
-unset VIRTUAL_ENV && uv run python -m src.runner --list-agents
-```
-
-### Available Tools
-
-1. **search_stack_exchange_for_error**
-   - Searches for specific error messages
-   - Extracts keywords intelligently
-   - Returns solutions with context
-
-2. **search_stack_exchange_general**
-   - General programming queries
-   - How-to questions and best practices
-   - Filtered by tags and acceptance
-
-3. **get_stack_exchange_answers**
-   - Retrieves full answer content
-   - Gets details for specific question IDs
-   - Useful for deep dives into solutions
-
-4. **analyze_error_and_suggest_fix**
-   - Comprehensive error analysis
-   - Suggests multiple fixes
-   - Includes code context consideration
-
-### Example Scenarios
-
-The agent can handle various error types:
+Or with the `TracedAgentRunner` class:
 
 ```python
-# Python Import Errors
-"ImportError: No module named 'requests'"
+import asyncio
+from src.traced_runner import TracedAgentRunner
 
-# JavaScript Type Errors
-"TypeError: Cannot read property 'map' of undefined"
+async def main():
+    runner = TracedAgentRunner(agent_name="debug_agent")
 
-# TypeScript Compilation Errors
-"Type 'string' is not assignable to type 'number'"
+    async for event in runner.run_traced(
+        prompt="TypeError: Cannot read property 'map' of undefined",
+        user_id="dev_456",
+        session_id="session_002"
+    ):
+        print(f"Event: {event}")
 
-# Framework-Specific Errors
-"React Hook 'useState' is called conditionally"
-"django.db.migrations.exceptions.InconsistentMigrationHistory"
-
-# CORS and Network Errors
-"Access blocked by CORS policy"
-
-# Version Control Issues
-"CONFLICT (content): Merge conflict in app.js"
+asyncio.run(main())
 ```
+
+## Available Agents
+
+### `debug_agent` (Default)
+Full-featured debugging agent with all tools:
+- Comprehensive error analysis
+- Multiple search strategies
+- Detailed Stack Exchange integration
+- Response formatting
+
+### `quick_debug_agent`
+Fast, focused debugging agent:
+- Limited to essential tools
+- Optimized for quick responses
+- Best for simple errors
+
+### `sequential_debug_agent`
+Multi-step debugging workflow:
+- Error analysis agent (first step)
+- Solution finder agent (second step)
+- Demonstrates sub-agent tracing
 
 ## Testing
 
-### Unit Tests
+### Running Tests
+
+Verify that LangSmith tracing didn't break any functionality:
 
 ```bash
 # Run all tests
-unset VIRTUAL_ENV && uv run pytest
+pytest tests/
 
-# Run specific test
-unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::test_debug_agent
+# Run with coverage
+pytest --cov=src tests/
+
+# Run specific test file
+pytest tests/test_agents.py -v
+
+# Run tests with verbose output
+pytest tests/ -v
 ```
 
-### Scenario Testing
+### Expected Test Results
 
-Create custom scenarios in JSON format:
+All tests should pass whether tracing is enabled or not. The test suite verifies:
+- Agent initialization and configuration
+- Tool function execution
+- Scenario loading and execution
+- Error handling
+- Agent selection logic
 
-```json
-{
-  "scenarios": [
-    {
-      "name": "Custom Error Test",
-      "description": "Test custom error handling",
-      "error_message": "Your error message here",
-      "programming_language": "python",
-      "conversation": [
-        {
-          "user_input": "Error details",
-          "expected_tools": ["search_stack_exchange_for_error"],
-          "expected_keywords": ["solution", "fix"]
-        }
-      ]
-    }
-  ]
-}
+**Important**: Tests verify core functionality. To verify that tracing works correctly, run scenarios with `--traced` flag and check the LangSmith dashboard.
+
+### Verifying Tracing Works
+
+1. **Run a scenario with tracing:**
+   ```bash
+   unset VIRTUAL_ENV && uv run python -m src.runner src/scenarios/python_import_error_missing_module.json --traced
+   ```
+
+2. **Check the LangSmith dashboard:**
+   - Navigate to https://smith.langchain.com
+   - Select your project (e.g., "code-debug-agent")
+   - Verify traces appear for the scenario execution
+   - Inspect trace to see tool calls, LLM generations, and timing
+
+3. **Expected trace structure:**
+   ```
+   Scenario: Python Import Error Missing Module
+   ├── debug_agent_execution
+   │   ├── search_stack_exchange_for_error (tool)
+   │   ├── format_debug_response (callback)
+   │   └── Gemini LLM generation
+   └── Response assembly
+   ```
+
+## Viewing Traces in LangSmith
+
+After running scenarios with `--traced`, view comprehensive traces at https://smith.langchain.com:
+
+1. **Navigate to your project** (e.g., "code-debug-agent")
+2. **View traces** organized by:
+   - Scenario name
+   - Agent type (debug_agent, quick_debug_agent, etc.)
+   - Timestamp and session ID
+
+**Each trace shows:**
+- Full agent execution flow
+- Tool call hierarchy (Stack Exchange searches)
+- Context provider/RAG operations with results
+- LLM token usage, latency, and model parameters
+- Error stack traces with full context (if any)
+- Input/output for each step
+
+## Scenarios
+
+Pre-configured scenarios are available in `src/scenarios/`:
+
+- `python_import_error_missing_module.json`
+- `javascript_type_error_undefined_property.json`
+- `typescript_type_error.json`
+- `react_hook_rules_violation.json`
+- `django_migration_error.json`
+- `nodejs_module_resolution_error.json`
+- And more...
+
+Each scenario tests different error types and programming languages.
+
+## LangSmith Integration Details
+
+### Important Implementation Note
+
+**LangSmith `@traceable` decorators are NOT applied directly to tool functions and callbacks** because they interfere with Google ADK's function signature parsing (the decorator adds a `config` parameter that breaks ADK's automatic function calling).
+
+Instead, tracing is handled at the **runner level**:
+- `src/runner.py`: Scenario-level tracing via `--traced` flag
+- `src/traced_runner.py`: Advanced tracing wrapper for custom use cases
+
+### Scenario-Level Tracing
+
+When using `--traced` flag, each scenario execution creates a top-level trace in LangSmith that automatically captures:
+- All tool calls (Stack Exchange searches)
+- LLM generations (Gemini API calls)
+- Agent decision-making and responses
+- Execution time and errors
+
+Example trace hierarchy:
+```
+Scenario: Python Import Error
+├── Agent initialization
+├── Tool call: search_stack_exchange_for_error
+│   └── Stack Exchange API request
+├── LLM generation (Gemini)
+└── Response formatting
+```
+
+### Implementation Pattern
+
+**Tools** (`src/tools.py`):
+```python
+# NO decorator - allows Google ADK to parse function signatures correctly
+async def search_stack_exchange_for_error(
+    error_message: str,
+    programming_language: Optional[str],
+    framework: Optional[str],
+    include_solutions: bool,
+    max_results: int
+) -> str:
+    """Search Stack Exchange for solutions."""
+    # Tool implementation - traced at runner level
+```
+
+**Callbacks** (`src/agents.py`):
+```python
+# NO decorator - same reasoning as tools
+def _format_debug_response(
+    callback_context: CallbackContext,
+    llm_response: LlmResponse,
+) -> LlmResponse:
+    """Format responses."""
+    # Callback implementation - traced at runner level
+```
+
+**Runner** (`src/runner.py`):
+```python
+# Tracing applied here when --traced flag is used
+@traceable(name=f"Scenario: {scenario.name}")
+async def execute_traced():
+    return await self._run_scenario_untraced(scenario)
 ```
 
 ## Project Structure
 
 ```
-code-debug-agent-demo/
+observability/langsmith/google-adk/code-debug-agent-demo/
+├── README.md                          # This file
+├── pyproject.toml                     # Dependencies (includes langsmith)
+├── .env.example                       # Environment variable template
 ├── src/
-│   ├── __init__.py
-│   ├── agents.py                 # Agent definitions
-│   ├── tools.py                  # Stack Exchange tools
-│   ├── prompts.py                # System prompts
-│   ├── runner.py                 # Scenario runner
+│   ├── agents.py                      # Agent definitions with traced callbacks
+│   ├── tools.py                       # Tools with @traceable decorators
+│   ├── traced_runner.py               # Advanced tracing wrapper (optional)
+│   ├── runner.py                      # Standard runner with --traced flag
+│   ├── prompts.py                     # System prompts
 │   ├── services/
-│   │   └── stackexchange_service.py  # API wrapper
-│   └── scenarios/
-│       └── common_errors.json    # Test scenarios
-├── tests/
-│   ├── conftest.py
-│   └── test_agents.py
-├── pyproject.toml
-├── README.md
-└── .env.example
-```
-
-## Configuration
-
-### Environment Variables
-
-- `GOOGLE_API_KEY`: Required for Gemini models
-- `STACKEXCHANGE_API_KEY`: Optional, increases rate limits
-- `GOOGLE_GENAI_USE_VERTEXAI`: Optional, use Vertex AI instead
-- `DEBUG`: Enable debug logging
-
-### Agent Models
-
-The agents use Gemini 2.0 Flash by default. You can modify the model in `src/agents.py`:
-
-```python
-debug_agent = Agent(
-    model='gemini-2.0-flash-exp',  # Change model here
-    name='debug_agent',
-    ...
-)
-```
-
-## Advanced Usage
-
-### Creating Custom Agents
-
-```python
-from google.adk import Agent
-from src.tools import DEBUG_TOOLS
-
-custom_agent = Agent(
-    model='gemini-2.0-flash-exp',
-    name='custom_debug_agent',
-    instruction="Your custom instructions here",
-    tools=DEBUG_TOOLS,
-)
-```
-
-### Adding New Tools
-
-```python
-from google.adk.agents import Tool
-
-async def custom_search_tool(query: str) -> str:
-    # Your implementation
-    return json.dumps(results)
-
-custom_tool = Tool(
-    function=custom_search_tool,
-    name="custom_search",
-    description="Description of what this tool does"
-)
+│   │   └── stackexchange_service.py   # Context provider (RAG)
+│   └── scenarios/                     # Test scenarios (12+ files)
+└── tests/
+    ├── conftest.py
+    └── test_agents.py                 # Functionality tests
 ```
 
 ## Troubleshooting
 
-### Common Issues
+### LangSmith Not Capturing Traces
 
-1. **Rate Limiting**: Add a Stack Exchange API key to increase limits
-2. **No Results Found**: Try broadening search terms or using general search
-3. **Timeout Errors**: Increase timeout in `StackExchangeService`
-4. **API Key Issues**: Ensure your Google API key has Gemini access enabled
-
-### Debug Mode
-
-Enable debug logging:
-
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
+Ensure environment variables are set correctly:
+```bash
+export LANGSMITH_TRACING=true
+export LANGSMITH_API_KEY=ls_...
+export LANGSMITH_PROJECT=code-debug-agent
 ```
 
-## Contributing
+Also ensure you're using the `--traced` flag when running scenarios.
 
-Contributions are welcome! Please:
+### Google Gemini API Errors
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
+**Rate Limit Errors (429 RESOURCE_EXHAUSTED):**
+
+The free tier of Google Gemini API has a limit of **10 requests per minute** per model. When running all scenarios, you may hit this limit and see errors like:
+```
+429 RESOURCE_EXHAUSTED: You exceeded your current quota
+```
+
+**Solutions:**
+1. **Use a stable model** instead of experimental: Set `GOOGLE_MODEL=gemini-2.0-flash` (default) instead of `gemini-2.0-flash-exp`
+2. Run fewer scenarios at once (e.g., run specific scenario files instead of `--all-scenarios`)
+3. Add delays between scenario runs
+4. Use a paid Google Cloud project with higher quotas
+
+**Available Models:**
+- `gemini-2.0-flash` (default, stable with better rate limits)
+- `gemini-1.5-flash` (previous generation, stable)
+- `gemini-1.5-pro` (more capable but slower)
+- `gemini-2.0-flash-exp` (experimental, lower rate limits)
+
+**API Key Configuration:**
+
+Verify your API key is valid:
+```bash
+export GOOGLE_API_KEY=your-api-key
+export GOOGLE_GENAI_USE_VERTEXAI=0
+```
+
+This implementation uses the **direct Google Gemini API**, not Vertex AI. Get your API key from: https://aistudio.google.com/app/apikey
+
+### Stack Exchange Rate Limiting
+
+Without an API key, you're limited to 300 requests/day. For higher limits:
+1. Register at https://stackapps.com/apps/oauth/register
+2. Set `STACKEXCHANGE_API_KEY` environment variable
+
+### Tests Pass But Tracing Doesn't Work
+
+If tests pass but you don't see traces in LangSmith:
+1. Verify `LANGSMITH_API_KEY` is set correctly
+2. Check you're using the `--traced` flag
+3. Ensure `LANGSMITH_TRACING=true` is set
+4. Check LangSmith dashboard for correct project name
+
+## Comparison with Langfuse Implementation
+
+This implementation follows similar patterns to the Langfuse version at `observability/langfuse/google-adk/code-debug-agent-demo/` but uses LangSmith's SDK:
+
+| Aspect | Langfuse | LangSmith |
+|--------|----------|-----------|
+| **Decorator** | `@observe` | `@traceable` |
+| **Run Types** | Custom types | Standard (tool, chain, llm) |
+| **Client Init** | `get_client()` | `Client()` |
+| **Trace Context** | `update_current_trace()` | Automatic via decorator |
+
+## Resources
+
+- [Google ADK Documentation](https://github.com/google/adk-python)
+- [LangSmith Documentation](https://docs.smith.langchain.com/)
+- [LangSmith Python SDK](https://github.com/langchain-ai/langsmith-sdk)
+- [Stack Exchange API Docs](https://api.stackexchange.com/docs)
 
 ## License
 
-This project is provided as a demonstration of Google ADK capabilities.
-
-## Acknowledgments
-
-- Built with [Google Agent Development Kit (ADK)](https://github.com/google/adk)
-- Powered by Gemini models
-- Integrates with Stack Exchange API
-- Inspired by the ADK samples repository
-
-## Related Resources
-
-- [Google ADK Documentation](https://github.com/google/adk)
-- [Stack Exchange API](https://api.stackexchange.com/)
-- [ADK Samples](https://github.com/google/adk-samples)
-- [LangChain Documentation](https://python.langchain.com/)
+This is a demonstration project for Google ADK with LangSmith observability integration.
