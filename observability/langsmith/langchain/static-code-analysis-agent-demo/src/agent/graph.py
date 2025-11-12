@@ -25,13 +25,22 @@ def create_agent(config: Optional[Config] = None):
         config.validate()
 
     # Configure LangSmith tracing via environment variables
-    # LangSmith automatically traces when LANGSMITH_TRACING=true is set
+    # Set both LANGSMITH_ and LANGCHAIN_ prefixes for compatibility
     if config.LANGSMITH_ENABLED and config.LANGSMITH_API_KEY:
         os.environ["LANGSMITH_TRACING"] = "true"
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"  # For LangChain compatibility
         os.environ["LANGSMITH_API_KEY"] = config.LANGSMITH_API_KEY
+        os.environ["LANGCHAIN_API_KEY"] = config.LANGSMITH_API_KEY  # For LangChain compatibility
         os.environ["LANGSMITH_PROJECT"] = config.LANGSMITH_PROJECT
+        os.environ["LANGCHAIN_PROJECT"] = config.LANGSMITH_PROJECT
         os.environ["LANGSMITH_ENDPOINT"] = config.LANGSMITH_ENDPOINT
-        print(f"✓ LangSmith tracing enabled - Project: {config.LANGSMITH_PROJECT}")
+        os.environ["LANGCHAIN_ENDPOINT"] = config.LANGSMITH_ENDPOINT
+        if config.LANGSMITH_WORKSPACE_ID:
+            os.environ["LANGSMITH_WORKSPACE_ID"] = config.LANGSMITH_WORKSPACE_ID
+            print(f"✓ LangSmith tracing enabled - Project: {config.LANGSMITH_PROJECT} (Workspace: {config.LANGSMITH_WORKSPACE_ID})")
+        else:
+            print(f"✓ LangSmith tracing enabled - Project: {config.LANGSMITH_PROJECT}")
+            print("⚠ Warning: LANGSMITH_WORKSPACE_ID not set - required for org-scoped API keys")
     else:
         print("⚠ LangSmith tracing disabled")
 
@@ -328,10 +337,17 @@ async def run_agent(
         from datetime import datetime
 
         # Set environment variables for automatic tracing
+        # Set both LANGSMITH_ and LANGCHAIN_ prefixes for compatibility
         os.environ["LANGSMITH_TRACING"] = "true"
+        os.environ["LANGCHAIN_TRACING_V2"] = "true"
         os.environ["LANGSMITH_API_KEY"] = app_config.LANGSMITH_API_KEY
+        os.environ["LANGCHAIN_API_KEY"] = app_config.LANGSMITH_API_KEY
         os.environ["LANGSMITH_PROJECT"] = app_config.LANGSMITH_PROJECT
+        os.environ["LANGCHAIN_PROJECT"] = app_config.LANGSMITH_PROJECT
         os.environ["LANGSMITH_ENDPOINT"] = app_config.LANGSMITH_ENDPOINT
+        os.environ["LANGCHAIN_ENDPOINT"] = app_config.LANGSMITH_ENDPOINT
+        if app_config.LANGSMITH_WORKSPACE_ID:
+            os.environ["LANGSMITH_WORKSPACE_ID"] = app_config.LANGSMITH_WORKSPACE_ID
 
         # Create client for metadata enrichment
         langsmith_client = Client()

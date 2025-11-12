@@ -24,9 +24,10 @@ This demo showcases a LangGraph-based AI agent that performs static code analysi
 This implementation leverages **LangSmith's automatic tracing** capabilities with the following features:
 
 #### 1. **Automatic Tracing**
-- Environment variable-based configuration (`LANGSMITH_TRACING=true`)
+- Environment variable-based configuration (sets both `LANGSMITH_TRACING` and `LANGCHAIN_TRACING_V2`)
 - Automatic capture of all LLM calls, tool executions, and agent steps
 - No manual trace management required
+- **Requires `LANGSMITH_WORKSPACE_ID` for org-scoped API keys** (most common)
 
 #### 2. **Enhanced Metadata**
 - Custom tags for filtering: `static-analysis`, `security`, `quality`, `production`
@@ -69,8 +70,13 @@ OPENAI_API_KEY=your-openai-api-key
 # LangSmith Configuration
 LANGSMITH_API_KEY=your-langsmith-api-key
 LANGSMITH_PROJECT=static-code-analysis-agent
-LANGSMITH_TRACING=true
 LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+
+# REQUIRED for org-scoped API keys (find in LangSmith: Settings → Workspace → Workspace ID)
+LANGSMITH_WORKSPACE_ID=your-workspace-id
+
+# Note: The code automatically sets both LANGSMITH_ and LANGCHAIN_ environment
+# variables for maximum compatibility
 
 # Optional
 MODEL_NAME=gpt-4-turbo-preview

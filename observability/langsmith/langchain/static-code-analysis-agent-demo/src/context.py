@@ -110,7 +110,11 @@ class Config:
         "LANGSMITH_ENDPOINT",
         "https://api.smith.langchain.com"
     )
-    LANGSMITH_ENABLED: bool = os.getenv("LANGSMITH_TRACING", "true").lower() == "true"
+    LANGSMITH_WORKSPACE_ID: Optional[str] = os.getenv("LANGSMITH_WORKSPACE_ID")
+    LANGSMITH_ENABLED: bool = (
+        os.getenv("LANGCHAIN_TRACING_V2", "true").lower() == "true" or
+        os.getenv("LANGSMITH_TRACING", "true").lower() == "true"
+    )
 
     # Debug Settings
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
