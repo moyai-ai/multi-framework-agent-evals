@@ -1,5 +1,6 @@
 """Unit tests for Code Debug Agent."""
 
+import os
 import pytest
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -26,9 +27,12 @@ class TestAgents:
 
     def test_debug_agent_configuration(self):
         """Test main debug agent configuration."""
+        # Get expected model from environment variable or use default
+        expected_model = os.getenv("GOOGLE_MODEL", "gemini-2.0-flash")
+        
         assert debug_agent is not None
         assert debug_agent.name == 'debug_agent'
-        assert debug_agent.model == 'gemini-2.0-flash-exp'
+        assert debug_agent.model == expected_model
         assert debug_agent.tools == DEBUG_TOOLS
         assert debug_agent.instruction is not None
 

@@ -60,11 +60,6 @@ cp .env.example .env
 
 # 2. Install dependencies
 unset VIRTUAL_ENV && uv sync
-
-# 3. Run the example (recommended first step!)
-unset VIRTUAL_ENV && uv run python example_traced_usage.py
-
-# 4. View traces in Langfuse dashboard
 ```
 
 ## Usage
