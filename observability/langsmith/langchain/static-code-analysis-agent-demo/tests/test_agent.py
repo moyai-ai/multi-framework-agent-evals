@@ -79,11 +79,22 @@ class TestAgentCreation:
 
     def test_create_agent_without_config(self, mock_openai_client):
         """Test creating agent without configuration."""
-        with patch("src.agent.graph.Config") as mock_config:
-            mock_config.return_value.validate.return_value = True
-            mock_config.return_value.OPENAI_API_KEY = "test-key"
-            mock_config.return_value.MODEL_NAME = "gpt-4"
-            mock_config.return_value.TEMPERATURE = 0.3
+        # Create a real Config instance but patch the environment to disable LangSmith
+        with patch("src.agent.graph.Config") as mock_config_class:
+            # Create a mock instance that behaves like a real Config
+            mock_instance = Mock()
+            mock_instance.validate.return_value = True
+            mock_instance.OPENAI_API_KEY = "test-key"
+            mock_instance.MODEL_NAME = "gpt-4"
+            mock_instance.TEMPERATURE = 0.3
+            # Disable LangSmith to avoid setting environment variables
+            mock_instance.LANGSMITH_ENABLED = False
+            mock_instance.LANGSMITH_API_KEY = None
+            mock_instance.LANGSMITH_PROJECT = "test-project"
+            mock_instance.LANGSMITH_ENDPOINT = "https://api.smith.langchain.com"
+            mock_instance.LANGSMITH_WORKSPACE_ID = None
+            
+            mock_config_class.return_value = mock_instance
 
             agent = create_agent()
             assert agent is not None
@@ -101,6 +112,7 @@ class TestAgentExecution:
             mock_agent.ainvoke = AsyncMock(return_value={
                 "repository_owner": "example",
                 "repository_name": "repo",
+                "files_to_analyze": ["file1.py", "file2.py"],
                 "files_analyzed": ["file1.py", "file2.py"],
                 "issues_found": [
                     {"rule_id": "sql-injection", "severity": "HIGH"},
@@ -115,7 +127,7 @@ class TestAgentExecution:
             result = await run_agent(
                 repository_url="https://github.com/example/repo",
                 analysis_type="security",
-                config=test_config
+                app_config=test_config
             )
 
             assert result["repository"] == "example/repo"
@@ -154,7 +166,8 @@ class TestAgentExecution:
 
                 result = run_agent_sync(
                     repository_url="https://github.com/test/repo",
-                    config=test_config
+                    analysis_type="security",
+                    app_config=test_config
                 )
 
                 assert result["repository"] == "test/repo"

@@ -101,11 +101,16 @@ class TestScenarioExecution:
         }
         (scenarios_dir / "scenario1.json").write_text(json.dumps(scenario1))
 
-        with patch("src.agent.run_agent") as mock_run:
-            mock_run.return_value = {
+        # Patch both run_agent and the manager's analyze_repository to prevent actual execution
+        with patch("src.manager.AnalysisManager.analyze_repository") as mock_analyze:
+            mock_analyze.return_value = {
+                "repository": "test/repo1",
+                "analysis_type": "security",
                 "final_report": "Analysis complete",
                 "issues_found": [],
-                "files_analyzed": []
+                "files_analyzed": [],
+                "steps_taken": 0,
+                "error": None
             }
 
             results = await scenario_runner.run_all_scenarios(str(scenarios_dir))
