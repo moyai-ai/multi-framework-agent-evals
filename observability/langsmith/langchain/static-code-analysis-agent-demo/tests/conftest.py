@@ -176,3 +176,11 @@ def setup_test_env(monkeypatch):
     monkeypatch.setenv("DEBUG", "true")
     # Force mock OpenGrep for all unit tests
     monkeypatch.setenv("USE_MOCK_OPENGREP", "true")
+    # Explicitly disable LangSmith tracing for all unit tests
+    monkeypatch.setenv("LANGCHAIN_TRACING_V2", "false")
+    monkeypatch.setenv("LANGSMITH_TRACING", "false")
+    monkeypatch.setenv("LANGSMITH_API_KEY", "")
+    # Remove any existing LangSmith environment variables that might enable tracing
+    monkeypatch.delenv("LANGSMITH_PROJECT", raising=False)
+    monkeypatch.delenv("LANGSMITH_ENDPOINT", raising=False)
+    monkeypatch.delenv("LANGSMITH_WORKSPACE_ID", raising=False)

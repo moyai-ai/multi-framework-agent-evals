@@ -79,7 +79,8 @@ class TestAgentCreation:
 
     def test_create_agent_without_config(self, mock_openai_client):
         """Test creating agent without configuration."""
-        # Create a real Config instance but patch the environment to disable LangSmith
+        # LangSmith tracing is disabled by the setup_test_env fixture
+        # which sets LANGCHAIN_TRACING_V2 and LANGSMITH_TRACING to false
         with patch("src.agent.graph.Config") as mock_config_class:
             # Create a mock instance that behaves like a real Config
             mock_instance = Mock()
@@ -87,13 +88,12 @@ class TestAgentCreation:
             mock_instance.OPENAI_API_KEY = "test-key"
             mock_instance.MODEL_NAME = "gpt-4"
             mock_instance.TEMPERATURE = 0.3
-            # Disable LangSmith to avoid setting environment variables
             mock_instance.LANGSMITH_ENABLED = False
             mock_instance.LANGSMITH_API_KEY = None
             mock_instance.LANGSMITH_PROJECT = "test-project"
             mock_instance.LANGSMITH_ENDPOINT = "https://api.smith.langchain.com"
             mock_instance.LANGSMITH_WORKSPACE_ID = None
-            
+
             mock_config_class.return_value = mock_instance
 
             agent = create_agent()
