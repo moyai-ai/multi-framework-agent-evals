@@ -40,11 +40,8 @@ When running with `--traced` flag, LangSmith captures:
 ## Installation
 
 ```bash
-# Install dependencies
-pip install -e .
-
-# Or with uv
-uv sync
+# Install dependencies with uv
+unset VIRTUAL_ENV && uv sync
 ```
 
 ## Configuration
@@ -109,45 +106,6 @@ unset VIRTUAL_ENV && uv run python -m src.runner --all-scenarios
 python -m src.runner src/scenarios/sample_python_import_error.json
 ```
 
-### Advanced: Using TracedAgentRunner Directly
-
-For custom use cases, use `src/traced_runner.py` directly:
-
-```python
-import asyncio
-from src.traced_runner import run_debug_agent_traced
-
-async def main():
-    response = await run_debug_agent_traced(
-        prompt="ImportError: No module named 'pandas'",
-        agent_name="debug_agent",
-        user_id="developer_123",
-        session_id="debug_session_001"
-    )
-    print(response)
-
-asyncio.run(main())
-```
-
-Or with the `TracedAgentRunner` class:
-
-```python
-import asyncio
-from src.traced_runner import TracedAgentRunner
-
-async def main():
-    runner = TracedAgentRunner(agent_name="debug_agent")
-
-    async for event in runner.run_traced(
-        prompt="TypeError: Cannot read property 'map' of undefined",
-        user_id="dev_456",
-        session_id="session_002"
-    ):
-        print(f"Event: {event}")
-
-asyncio.run(main())
-```
-
 ## Available Agents
 
 ### `debug_agent` (Default)
@@ -177,16 +135,13 @@ Verify that LangSmith tracing didn't break any functionality:
 
 ```bash
 # Run all tests
-pytest tests/
-
-# Run with coverage
-pytest --cov=src tests/
+unset VIRTUAL_ENV && uv run pytest tests/
 
 # Run specific test file
-pytest tests/test_agents.py -v
+unset VIRTUAL_ENV && uv run pytest tests/test_agents.py -v
 
 # Run tests with verbose output
-pytest tests/ -v
+unset VIRTUAL_ENV && uv run pytest tests/ -v
 ```
 
 ### Expected Test Results

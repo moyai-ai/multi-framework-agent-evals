@@ -11,6 +11,7 @@ from src.agents import (
     list_agents,
     AGENTS
 )
+from src.agents import DEFAULT_MODEL
 from src.tools import (
     search_stack_exchange_for_error,
     search_stack_exchange_general,
@@ -28,7 +29,7 @@ class TestAgents:
         """Test main debug agent configuration."""
         assert debug_agent is not None
         assert debug_agent.name == 'debug_agent'
-        assert debug_agent.model == 'gemini-2.0-flash-exp'
+        assert debug_agent.model == DEFAULT_MODEL
         assert debug_agent.tools == DEBUG_TOOLS
         assert debug_agent.instruction is not None
 

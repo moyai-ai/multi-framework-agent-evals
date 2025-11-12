@@ -206,4 +206,5 @@ __all__ = [
     'get_initial_agent',
     'list_agents',
     'AGENTS',
+    'DEFAULT_MODEL',
 ]
