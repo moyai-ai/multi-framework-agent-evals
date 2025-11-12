@@ -68,19 +68,13 @@ FinancialResearchManager (@traceable workflow)
 
 ## Installation
 
-1. **Clone the repository and navigate to this directory**
+1. **Install dependencies using uv**
 
 ```bash
-cd observability/langsmith/openai-agents-sdk/financial-research-agent-demo
+unset VIRTUAL_ENV && uv sync
 ```
 
-2. **Install dependencies using uv**
-
-```bash
-uv sync
-```
-
-3. **Set up environment variables**
+2. **Set up environment variables**
 
 Create a `.env` file with:
 
@@ -93,40 +87,37 @@ LANGSMITH_PROJECT=financial-research-agents  # Optional: specify project name
 
 ## Usage
 
-### Interactive Mode
-
-Run the manager directly for interactive queries:
-
-```bash
-uv run --env-file .env python -m src.manager
-```
-
-Or provide a query as command line arguments:
-
-```bash
-uv run --env-file .env python -m src.manager "Analyze Apple Inc's Q4 2024 performance"
-```
-
 ### Scenario-Based Testing
 
 Run predefined test scenarios:
 
 ```bash
-# Run a specific scenario
-uv run --env-file .env python -m src.runner src/scenarios/company_analysis.json --verbose
-
 # Run all scenarios
-uv run --env-file .env python -m src.runner --all-scenarios --verbose
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner --all-scenarios --verbose
 
-# Save reports
-uv run --env-file .env python -m src.runner --all-scenarios --output reports/
+# Run a specific scenario
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/company_analysis.json --verbose
 ```
 
-## Available Scenarios
+#### Available Scenarios
 
 - `company_analysis.json` - Analyze a specific company's financial performance
 - `market_research.json` - Research a market segment or trend
 - `competitor_analysis.json` - Compare multiple companies in a sector
+
+### Interactive Mode
+
+Run the manager directly for interactive queries:
+
+```bash
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager
+```
+
+Or provide a query as command line arguments:
+
+```bash
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "Analyze Apple Inc's Q4 2024 performance"
+```
 
 ## Viewing Traces in LangSmith
 
@@ -150,23 +141,6 @@ Use LangSmith's features to:
 - **Optimize costs**: Track token usage per agent/tool
 - **Monitor latency**: Find bottlenecks in the workflow
 - **Evaluate quality**: Use LangSmith's evaluation features
-
-## Observability Comparison
-
-### LangSmith vs Langfuse
-
-Both implementations provide comprehensive observability, but with different approaches:
-
-| Feature | LangSmith | Langfuse |
-|---------|-----------|----------|
-| Decorator | `@traceable` | `@observe` |
-| SDK Integration | Native LangChain | Framework-agnostic |
-| Trace Hierarchy | Automatic | Manual with `update_current_span` |
-| UI/Dashboard | smith.langchain.com | cloud.langfuse.com |
-| Evaluation Tools | Built-in | Built-in |
-| Cost Tracking | Yes | Yes |
-
-**Key Difference**: LangSmith uses `@traceable` decorator and provides automatic parent-child span relationships, while Langfuse uses `@observe` and requires explicit span updates via `get_client()`.
 
 ## Project Structure
 
@@ -192,64 +166,18 @@ financial-research-agents-demo/
 └── .env
 ```
 
-## Key Features
-
-### Multi-Agent Orchestration
-
-The system coordinates multiple specialized agents to perform complex research:
-
-```python
-from src.manager import FinancialResearchManager
-
-manager = FinancialResearchManager(verbose=True)
-result = await manager.run("Analyze Apple Inc's recent performance")
-```
-
-### Context Preservation
-
-Financial research state is maintained throughout the workflow:
-
-```python
-context = FinancialResearchContext(
-    query="Analyze Apple Inc",
-    company_name="Apple Inc",
-    search_plan=["Apple earnings", "Apple iPhone sales"],
-    current_stage="searching"
-)
-```
-
-### Concurrent Search Execution
-
-Multiple searches execute in parallel for efficiency:
-
-```python
-# Searches run concurrently
-search_results = await manager._perform_searches(search_terms)
-```
-
-### Analyst-as-Tool Pattern
-
-Specialist agents are exposed as tools to the Writer agent:
-
-```python
-writer_agent = Agent(
-    name="Writer Agent",
-    tools=[company_financials_tool, risk_analysis_tool]
-)
-```
-
 ## Testing
 
 Run unit tests:
 
 ```bash
-uv run pytest
+unset VIRTUAL_ENV && uv run pytest
 ```
 
 Run integration tests (requires API keys):
 
 ```bash
-uv run pytest -m integration
+unset VIRTUAL_ENV && uv run pytest -m integration
 ```
 
 ## Troubleshooting
@@ -273,16 +201,5 @@ If you hit OpenAI rate limits:
 Ensure all dependencies are installed:
 
 ```bash
-uv sync --all-extras
+unset VIRTUAL_ENV && uv sync --all-extras
 ```
-
-## License
-
-MIT
-
-## Related Implementations
-
-- **Non-traced version**: `frameworks/openai-agents-sdk/financial-research-agents-demo`
-- **Langfuse version**: `observability/langfuse/openai-agents-sdk/financial-research-agent-demo`
-- **Google ADK + LangSmith**: `observability/langsmith/google-adk/code-debug-agent-demo`
-- **LangChain + LangSmith**: `observability/langsmith/langchain/static-code-analysis-agent-demo`
