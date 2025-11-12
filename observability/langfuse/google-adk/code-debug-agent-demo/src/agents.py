@@ -1,6 +1,7 @@
 """Code Debug Agent implementation using Google ADK with Langfuse tracing."""
 
 import logging
+import os
 from typing import Dict, Optional, List, Any
 from google.adk import Agent
 from google.adk.agents.callback_context import CallbackContext
@@ -10,6 +11,11 @@ from src.tools import DEBUG_TOOLS
 from src.prompts import DEBUG_AGENT_PROMPT
 
 logger = logging.getLogger(__name__)
+
+# Get model from environment variable or use default
+# gemini-2.0-flash is the stable version with better rate limits than gemini-2.0-flash-exp
+DEFAULT_MODEL = "gemini-2.0-flash"
+MODEL = os.getenv("GOOGLE_MODEL", DEFAULT_MODEL)
 
 
 def _format_debug_response(
@@ -67,7 +73,7 @@ def _format_debug_response(
 
 # Main Debug Agent
 debug_agent = Agent(
-    model='gemini-2.0-flash-exp',
+    model=MODEL,
     name='debug_agent',
     instruction=DEBUG_AGENT_PROMPT,
     tools=DEBUG_TOOLS,
@@ -77,7 +83,7 @@ debug_agent = Agent(
 
 # Quick Error Lookup Agent (simpler, faster responses)
 quick_debug_agent = Agent(
-    model='gemini-2.0-flash-exp',
+    model=MODEL,
     name='quick_debug_agent',
     instruction="""You are a quick debugging assistant. When given an error message, immediately search Stack Exchange for the most relevant solution and provide a concise fix.
 
@@ -173,7 +179,7 @@ try:
 
     # Error Analyzer Agent (first step)
     error_analyzer = Agent(
-        model='gemini-2.0-flash-exp',
+        model=MODEL,
         name='error_analyzer',
         instruction="""Analyze the provided error message and identify:
 1. Error type and category
@@ -187,7 +193,7 @@ Output a structured analysis that the next agent can use to search for solutions
 
     # Solution Finder Agent (second step)
     solution_finder = Agent(
-        model='gemini-2.0-flash-exp',
+        model=MODEL,
         name='solution_finder',
         instruction="""Based on the error analysis, search Stack Exchange for the best solutions.
 Use the search tools to find relevant fixes and present them clearly.""",
