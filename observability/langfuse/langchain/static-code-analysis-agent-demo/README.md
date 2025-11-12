@@ -138,21 +138,6 @@ export USE_MOCK_OPENGREP=true
 
 ## Usage
 
-### Command Line Interface
-
-Run a static analysis directly:
-
-```bash
-# Run a security analysis on a repository
-unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "https://github.com/example/repo"
-
-# Run with specific analysis type
-unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "https://github.com/example/repo" --type quality
-
-# Run with specific analysis type (choices: security, quality, dependencies)
-unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "https://github.com/example/repo" --type dependencies
-```
-
 ### Running Scenarios
 
 Execute predefined analysis scenarios with real OpenGrep:
@@ -172,6 +157,21 @@ unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner --all-scenarios
 
 # Run with mock OpenGrep (if OpenGrep not installed or for testing)
 USE_MOCK_OPENGREP=true unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner --all-scenarios
+```
+
+### Command Line Interface
+
+Run a static analysis directly:
+
+```bash
+# Run a security analysis on a repository
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "https://github.com/example/repo"
+
+# Run with specific analysis type
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "https://github.com/example/repo" --type quality
+
+# Run with specific analysis type (choices: security, quality, dependencies)
+unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "https://github.com/example/repo" --type dependencies
 ```
 
 **OpenGrep Behavior:**

@@ -29,9 +29,13 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
         if config.LANGFUSE_PUBLIC_KEY and config.LANGFUSE_SECRET_KEY:
             # Set environment variables for Langfuse client
             import os
-            os.environ["LANGFUSE_PUBLIC_KEY"] = config.LANGFUSE_PUBLIC_KEY
-            os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
-            os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
+            # Only set if values are strings (not mocks or other types)
+            if isinstance(config.LANGFUSE_PUBLIC_KEY, str):
+                os.environ["LANGFUSE_PUBLIC_KEY"] = config.LANGFUSE_PUBLIC_KEY
+            if isinstance(config.LANGFUSE_SECRET_KEY, str):
+                os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
+            if isinstance(config.LANGFUSE_HOST, str):
+                os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
 
             # Initialize handler (credentials from environment)
             langfuse_handler = CallbackHandler()
@@ -467,9 +471,13 @@ async def run_agent(
         # Set environment variables for Langfuse client
         import os
         from datetime import datetime
-        os.environ["LANGFUSE_PUBLIC_KEY"] = config.LANGFUSE_PUBLIC_KEY
-        os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
-        os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
+        # Only set if values are strings (not mocks or other types)
+        if isinstance(config.LANGFUSE_PUBLIC_KEY, str):
+            os.environ["LANGFUSE_PUBLIC_KEY"] = config.LANGFUSE_PUBLIC_KEY
+        if isinstance(config.LANGFUSE_SECRET_KEY, str):
+            os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
+        if isinstance(config.LANGFUSE_HOST, str):
+            os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
 
         # Initialize handler and client
         langfuse_handler = CallbackHandler()
@@ -579,7 +587,7 @@ async def run_agent(
                 "type": analysis_type,
                 "model": config.MODEL_NAME,
                 "temperature": config.TEMPERATURE,
-                "max_steps": final_state["max_steps"]
+                "max_steps": final_state.get("max_steps", 20)
             },
             "results": {
                 "files_analyzed": len(final_state["files_analyzed"]),

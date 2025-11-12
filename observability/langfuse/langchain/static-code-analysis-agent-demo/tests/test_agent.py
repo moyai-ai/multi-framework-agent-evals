@@ -80,10 +80,16 @@ class TestAgentCreation:
     def test_create_agent_without_config(self, mock_openai_client):
         """Test creating agent without configuration."""
         with patch("src.agent.graph.Config") as mock_config:
-            mock_config.return_value.validate.return_value = True
-            mock_config.return_value.OPENAI_API_KEY = "test-key"
-            mock_config.return_value.MODEL_NAME = "gpt-4"
-            mock_config.return_value.TEMPERATURE = 0.3
+            mock_config_instance = mock_config.return_value
+            mock_config_instance.validate.return_value = True
+            mock_config_instance.OPENAI_API_KEY = "test-key"
+            mock_config_instance.MODEL_NAME = "gpt-4"
+            mock_config_instance.TEMPERATURE = 0.3
+            # Disable Langfuse tracing for unit tests
+            mock_config_instance.LANGFUSE_ENABLED = False
+            mock_config_instance.LANGFUSE_PUBLIC_KEY = None
+            mock_config_instance.LANGFUSE_SECRET_KEY = None
+            mock_config_instance.LANGFUSE_HOST = "https://cloud.langfuse.com"
 
             agent = create_agent()
             assert agent is not None
@@ -102,12 +108,15 @@ class TestAgentExecution:
                 "repository_owner": "example",
                 "repository_name": "repo",
                 "files_analyzed": ["file1.py", "file2.py"],
+                "files_to_analyze": ["file1.py", "file2.py"],
                 "issues_found": [
                     {"rule_id": "sql-injection", "severity": "HIGH"},
                     {"rule_id": "hardcoded-secret", "severity": "HIGH"}
                 ],
                 "final_answer": "Analysis complete. Found 2 security issues.",
                 "current_step": 5,
+                "max_steps": 20,
+                "should_continue": False,
                 "error": None
             })
             mock_create.return_value = mock_agent

@@ -24,6 +24,10 @@ def test_config():
     config.OPENAI_API_KEY = "test-api-key"
     config.MODEL_NAME = "gpt-4-turbo-preview"
     config.DEBUG = True
+    # Disable Langfuse tracing for unit tests
+    config.LANGFUSE_ENABLED = False
+    config.LANGFUSE_PUBLIC_KEY = None
+    config.LANGFUSE_SECRET_KEY = None
     return config
 
 
