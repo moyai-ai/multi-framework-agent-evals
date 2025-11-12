@@ -1,142 +1,172 @@
-# OpenAI Agents SDK - Financial Research Multi-Agent Demo
+# Financial Research Multi-Agent System with LangSmith Observability
 
-A comprehensive demonstration of the OpenAI Agents SDK featuring a multi-agent financial research system with orchestrated workflows and test-driven development.
+A sophisticated multi-agent system for financial research, built with OpenAI Agents SDK and instrumented with LangSmith for comprehensive observability and tracing.
 
 ## Overview
 
-This project implements a complete financial research agent system using the OpenAI Agents SDK. It demonstrates:
-- **Multi-agent orchestration** with specialized analyst agents
-- **Concurrent execution** of search tasks
-- **Tool integration** for financial analysis
-- **Context management** across agent workflows
-- **Test-driven approach** with JSON-based scenarios
+This demo showcases a complete financial research workflow orchestrated by multiple specialized agents:
 
-## Architecture
-
-### 6 Specialized Agents
-
-1. **Planner Agent** - Transforms user queries into structured search strategies
-2. **Search Agent** - Executes web searches for financial information
-3. **Financials Analyst Agent** - Analyzes company financial metrics (used as tool by Writer)
-4. **Risk Analyst Agent** - Assesses business risks (used as tool by Writer)
+1. **Planner Agent** - Creates search strategy from user query
+2. **Search Agent** - Executes web searches for information
+3. **Financials Analyst Agent** - Analyzes company financial metrics
+4. **Risk Analyst Agent** - Assesses business risks
 5. **Writer Agent** - Synthesizes comprehensive research reports
 6. **Verifier Agent** - Validates report quality and consistency
 
-### Workflow
+## LangSmith Observability
+
+This implementation provides full observability through LangSmith:
+
+### Instrumentation Layers
+
+1. **Workflow-Level Tracing**
+   - Overall research workflow traced with `@traceable` decorator
+   - Captures end-to-end execution with metadata and tags
+
+2. **Agent-Level Tracing**
+   - Each agent execution (planning, searching, writing, verifying) traced as separate spans
+   - Automatic tracking of inputs, outputs, and execution time
+
+3. **Tool-Level Tracing**
+   - All function tools (`web_search_tool`, `company_financials_tool`, `risk_analysis_tool`, `market_data_tool`) traced
+   - Captures tool invocations with parameters and results
+
+4. **LLM-Level Tracing**
+   - LLM calls automatically traced by LangSmith
+   - Token usage, latency, and model parameters captured
+
+### Key Features
+
+- **Hierarchical Trace Structure**: Nested spans showing the complete workflow
+- **Metadata Enrichment**: Each span includes relevant context (agent name, step, query, etc.)
+- **Error Tracking**: Automatic capture of exceptions and errors
+- **Performance Metrics**: Execution time, token usage, and latency for each component
+- **Search Correlation**: Group traces by user_id or session for multi-turn analysis
+
+## Architecture
 
 ```
-User Query
-    ↓
-[Planner Agent] → Search Terms
-    ↓
-[Search Agent] → Search Results (concurrent)
-    ↓
-[Writer Agent] → Draft Report
-    ↓         ↗ [Financials Analyst]
-              ↗ [Risk Analyst]
-    ↓
-[Verifier Agent] → Final Report
+FinancialResearchManager (@traceable workflow)
+├── plan_searches (@traceable chain)
+│   └── Runner.run(planner_agent) [auto-traced]
+│       └── LLM calls [auto-traced]
+├── perform_searches (@traceable chain)
+│   └── search_single_term x N (@traceable chain)
+│       └── Runner.run(search_agent) [auto-traced]
+│           ├── web_search_tool (@traceable tool)
+│           └── LLM calls [auto-traced]
+├── write_report (@traceable chain)
+│   └── Runner.run(writer_agent) [auto-traced]
+│       ├── company_financials_tool (@traceable tool)
+│       ├── risk_analysis_tool (@traceable tool)
+│       ├── market_data_tool (@traceable tool)
+│       └── LLM calls [auto-traced]
+└── verify_report (@traceable chain)
+    └── Runner.run(verifier_agent) [auto-traced]
+        └── LLM calls [auto-traced]
 ```
-
-### 4 Function Tools
-
-- `web_search_tool` - Search for financial data and market information
-- `company_financials_tool` - Analyze financial metrics and performance
-- `risk_analysis_tool` - Assess business risks and mitigants
-- `market_data_tool` - Retrieve current market data and prices
 
 ## Installation
 
-1. Install dependencies with uv:
+1. **Clone the repository and navigate to this directory**
+
 ```bash
-unset VIRTUAL_ENV && uv sync
+cd observability/langsmith/openai-agents-sdk/financial-research-agent-demo
+```
+
+2. **Install dependencies using uv**
+
+```bash
+uv sync
+```
+
+3. **Set up environment variables**
+
+Create a `.env` file with:
+
+```bash
+OPENAI_API_KEY=sk-...
+LANGSMITH_API_KEY=ls_...
+LANGSMITH_TRACING=true
+LANGSMITH_PROJECT=financial-research-agents  # Optional: specify project name
 ```
 
 ## Usage
 
-### Interactive Research
+### Interactive Mode
 
-Run the manager interactively:
+Run the manager directly for interactive queries:
+
 ```bash
-unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager
+uv run --env-file .env python -m src.manager
 ```
 
-Or provide a query directly:
+Or provide a query as command line arguments:
+
 ```bash
-unset VIRTUAL_ENV && uv run --env-file .env python -m src.manager "Analyze Apple Inc's Q4 2024 performance"
+uv run --env-file .env python -m src.manager "Analyze Apple Inc's Q4 2024 performance"
 ```
 
-### Running Test Scenarios
+### Scenario-Based Testing
 
-Execute a single scenario:
+Run predefined test scenarios:
+
 ```bash
-unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner src/scenarios/company_analysis.json --verbose
+# Run a specific scenario
+uv run --env-file .env python -m src.runner src/scenarios/company_analysis.json --verbose
+
+# Run all scenarios
+uv run --env-file .env python -m src.runner --all-scenarios --verbose
+
+# Save reports
+uv run --env-file .env python -m src.runner --all-scenarios --output reports/
 ```
 
-Run all scenarios:
-```bash
-unset VIRTUAL_ENV && uv run --env-file .env python -m src.runner --all-scenarios --verbose
-```
+## Available Scenarios
 
-### Running Tests with Pytest
+- `company_analysis.json` - Analyze a specific company's financial performance
+- `market_research.json` - Research a market segment or trend
+- `competitor_analysis.json` - Compare multiple companies in a sector
 
-**Unit tests**:
-```bash
-# Run all unit tests
-unset VIRTUAL_ENV && uv run pytest
+## Viewing Traces in LangSmith
 
-# Run specific test classes
-unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::TestContext -v
-unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::TestAgents -v
-unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::TestTools -v
-unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::TestScenarioRunner -v
-```
+After running the agents, view your traces in LangSmith:
 
-**Integration tests** (requires valid API key):
-```bash
-# Run integration tests
-unset VIRTUAL_ENV && uv run --env-file .env pytest -m integration -v
+1. Visit [https://smith.langchain.com/](https://smith.langchain.com/)
+2. Select your project (default: "financial-research-agents")
+3. Browse traces to see:
+   - Complete workflow execution
+   - Individual agent performances
+   - Tool invocations with parameters
+   - LLM calls with prompts and responses
+   - Token usage and costs
+   - Error tracking and debugging info
 
-# Run specific integration test
-unset VIRTUAL_ENV && uv run --env-file .env pytest tests/test_agents.py::TestIntegration::test_simple_research_flow -v
+### Analyzing Traces
 
-# Full scenario tests (requires API key and flag)
-unset VIRTUAL_ENV && RUN_FULL_SCENARIOS=1 uv run --env-file .env pytest tests/test_agents.py::TestIntegration::test_full_scenarios -v
-```
+Use LangSmith's features to:
+- **Compare runs**: See performance differences across queries
+- **Debug failures**: Identify where and why agents fail
+- **Optimize costs**: Track token usage per agent/tool
+- **Monitor latency**: Find bottlenecks in the workflow
+- **Evaluate quality**: Use LangSmith's evaluation features
 
-**All tests** (unit + integration):
-```bash
-unset VIRTUAL_ENV && uv run --env-file .env pytest -m tests/ -v
-```
+## Observability Comparison
 
-## Scenario JSON Format
+### LangSmith vs Langfuse
 
-Scenarios are defined in JSON with the following structure:
+Both implementations provide comprehensive observability, but with different approaches:
 
-```json
-{
-  "name": "Scenario Name",
-  "description": "What this scenario tests",
-  "query": "The financial research query",
-  "expectations": {
-    "min_search_terms": 3,
-    "required_sections": ["Executive Summary", "Financial Performance"],
-    "verification_should_pass": true,
-    "min_report_length": 500,
-    "required_keywords": ["revenue", "growth"]
-  },
-  "metadata": {
-    "test_type": "company_analysis",
-    "priority": "high"
-  }
-}
-```
+| Feature | LangSmith | Langfuse |
+|---------|-----------|----------|
+| Decorator | `@traceable` | `@observe` |
+| SDK Integration | Native LangChain | Framework-agnostic |
+| Trace Hierarchy | Automatic | Manual with `update_current_span` |
+| UI/Dashboard | smith.langchain.com | cloud.langfuse.com |
+| Evaluation Tools | Built-in | Built-in |
+| Cost Tracking | Yes | Yes |
 
-## Available Test Scenarios
-
-1. **company_analysis.json** - Comprehensive company financial analysis (Apple Inc)
-2. **market_research.json** - Market sector research (AI Semiconductors)
-3. **competitor_analysis.json** - Competitive landscape analysis (Tesla vs Rivian)
+**Key Difference**: LangSmith uses `@traceable` decorator and provides automatic parent-child span relationships, while Langfuse uses `@observe` and requires explicit span updates via `get_client()`.
 
 ## Project Structure
 
@@ -208,72 +238,51 @@ writer_agent = Agent(
 )
 ```
 
-## Environment Variables
+## Testing
 
-- `OPENAI_API_KEY` - Your OpenAI API key (required)
-- `RUN_FULL_SCENARIOS` - Set to "1" to run full scenario tests in pytest
-- `LOG_LEVEL` - Logging level (DEBUG, INFO, WARNING, ERROR)
+Run unit tests:
 
-## Development
-
-### Adding New Agents
-
-1. Define the agent in `src/agents.py`:
-```python
-new_agent = Agent[FinancialResearchContext](
-    name="New Agent",
-    model="gpt-4o",
-    instructions="Agent instructions...",
-    tools=[tool1, tool2]
-)
+```bash
+uv run pytest
 ```
 
-2. Add to AGENTS registry:
-```python
-AGENTS["new_agent"] = new_agent
+Run integration tests (requires API keys):
+
+```bash
+uv run pytest -m integration
 ```
-
-### Adding New Tools
-
-1. Create tool in `src/tools.py`:
-```python
-@function_tool(
-    name_override="tool_name",
-    description_override="Tool description"
-)
-async def tool_name(param1: str) -> str:
-    # Tool logic
-    return result
-```
-
-2. Assign to relevant agents
-
-### Creating New Scenarios
-
-1. Create JSON file in `src/scenarios/` directory
-2. Define query and expectations
-3. Run with: `uv run --env-file .env python -m src.runner src/scenarios/your_scenario.json`
-
-## Mock Data
-
-This demo uses mock financial data for testing purposes. In production:
-- Replace `web_search_tool` with real search API (Google, Bing, etc.)
-- Integrate with financial data providers (Bloomberg, Yahoo Finance, etc.)
-- Add real-time market data sources
 
 ## Troubleshooting
 
-### Common Issues
+### Traces Not Appearing
 
-1. **API Key Not Found**
-   - Ensure `OPENAI_API_KEY` is set in `.env` file
-   - Use `unset VIRTUAL_ENV && uv run --env-file .env` to load environment variables
+1. Verify `LANGSMITH_API_KEY` is set correctly
+2. Ensure `LANGSMITH_TRACING=true` is set
+3. Check console output for any LangSmith connection errors
+4. Verify you're looking at the correct project in LangSmith UI
 
-2. **Import Errors**
-   - Run `uv sync` to install dependencies
-   - Ensure you're in the correct directory
+### API Rate Limits
 
-3. **Test Failures**
-   - Check API key is valid
-   - Ensure you're using compatible OpenAI models
-   - Review scenario expectations match actual behavior
+If you hit OpenAI rate limits:
+- Reduce concurrent searches in `manager.py`
+- Add delays between agent calls
+- Use a different model (e.g., `gpt-4o-mini`)
+
+### Missing Dependencies
+
+Ensure all dependencies are installed:
+
+```bash
+uv sync --all-extras
+```
+
+## License
+
+MIT
+
+## Related Implementations
+
+- **Non-traced version**: `frameworks/openai-agents-sdk/financial-research-agents-demo`
+- **Langfuse version**: `observability/langfuse/openai-agents-sdk/financial-research-agent-demo`
+- **Google ADK + LangSmith**: `observability/langsmith/google-adk/code-debug-agent-demo`
+- **LangChain + LangSmith**: `observability/langsmith/langchain/static-code-analysis-agent-demo`
