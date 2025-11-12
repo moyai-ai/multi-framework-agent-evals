@@ -1,0 +1,17 @@
+{
+  "name": "Python AttributeError - Missing Method",
+  "description": "AttributeError when calling a non-existent method",
+  "error_message": "AttributeError: 'NoneType' object has no attribute 'split'",
+  "programming_language": "python",
+  "conversation": [
+    {
+      "user_input": "Getting AttributeError: 'NoneType' object has no attribute 'split' in my code",
+      "expected_tools": ["search_stack_exchange_for_error", "analyze_error_and_suggest_fix"],
+      "expected_keywords": ["NoneType", "None check", "defensive programming", "AttributeError"]
+    }
+  ],
+  "metadata": {
+    "difficulty": "easy",
+    "category": "null_reference"
+  }
+}

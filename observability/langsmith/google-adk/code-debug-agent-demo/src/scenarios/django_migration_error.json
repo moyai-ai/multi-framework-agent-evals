@@ -1,0 +1,18 @@
+{
+  "name": "Django Migration Error",
+  "description": "Django database migration conflict",
+  "error_message": "django.db.migrations.exceptions.InconsistentMigrationHistory",
+  "programming_language": "python",
+  "framework": "django",
+  "conversation": [
+    {
+      "user_input": "Django error during migration: django.db.migrations.exceptions.InconsistentMigrationHistory: Migration admin.0001_initial is applied before its dependency",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["migration", "django", "database", "reset migrations"]
+    }
+  ],
+  "metadata": {
+    "difficulty": "hard",
+    "category": "framework_specific"
+  }
+}
