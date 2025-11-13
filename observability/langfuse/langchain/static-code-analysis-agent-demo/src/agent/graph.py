@@ -389,12 +389,8 @@ async def run_agent(
             }
         }
 
-        # Initialize handler
-        langfuse_handler = CallbackHandler(
-            public_key=config.LANGFUSE_PUBLIC_KEY,
-            secret_key=config.LANGFUSE_SECRET_KEY,
-            host=config.LANGFUSE_HOST
-        )
+        # Initialize handler (reads credentials from environment variables)
+        langfuse_handler = CallbackHandler()
 
         # Set trace metadata
         langfuse_handler.set_trace_params(
