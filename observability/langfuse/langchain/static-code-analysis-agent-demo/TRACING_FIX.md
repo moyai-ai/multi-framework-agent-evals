@@ -32,22 +32,23 @@ langfuse_client.update_current_trace(
 
 ## Solution
 
-Set environment variables, initialize `CallbackHandler`, then use `set_trace_params()` to set trace metadata:
+Create a trace with metadata, then create `CallbackHandler` with `root=trace`:
 
 ```python
-# ✅ CORRECT - Set env vars, init handler, then set trace params
+# ✅ CORRECT - Create trace first, then handler rooted at that trace
 
-# 1. Set environment variables (CallbackHandler reads from env)
+# 1. Set environment variables
 import os
 os.environ["LANGFUSE_PUBLIC_KEY"] = config.LANGFUSE_PUBLIC_KEY
 os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
 os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
 
-# 2. Initialize handler (reads credentials from environment)
-langfuse_handler = CallbackHandler()
+# 2. Get Langfuse client
+from langfuse import get_client
+langfuse_client = get_client()
 
-# 3. Set trace metadata
-langfuse_handler.set_trace_params(
+# 3. Create trace with all metadata
+trace = langfuse_client.trace(
     name="static-code-analysis-agent: security analysis - owner/repo",
     user_id=user_id or "anonymous",
     session_id=session_id or "session_id",
@@ -69,23 +70,35 @@ langfuse_handler.set_trace_params(
     },
     version="v1.0.0"
 )
+
+# 4. Create CallbackHandler rooted at this trace
+from langfuse.langchain import CallbackHandler
+langfuse_handler = CallbackHandler(root=trace)
+
+# 5. Use handler with LangChain
+response = chain.invoke(
+    {"input": "..."},
+    config={"callbacks": [langfuse_handler]}
+)
 ```
 
 **Key Points:**
-- The `CallbackHandler()` constructor takes **no parameters**
-- It reads credentials from environment variables: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST`
-- Use `set_trace_params()` method to set trace name, user_id, session_id, tags, and metadata
+- Create trace with `langfuse_client.trace()` and all metadata upfront
+- Pass `root=trace` to `CallbackHandler` constructor
+- This ensures trace has correct name, user_id, session_id, tags, metadata from the start
+- The `root` parameter links the LangChain execution to the Langfuse trace
 
 ## Changes Made
 
-### 1. Set Environment Variables and Initialize CallbackHandler
+### 1. Create Trace with Metadata, Then Create Handler
 
-**File:** `src/agent/graph.py:475-480` (env vars), `src/agent/graph.py:392-403` (handler)
+**File:** `src/agent/graph.py:475-480` (env vars), `src/agent/graph.py:392-395` (client), `src/agent/graph.py:420-433` (trace and handler)
 
 - Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST` environment variables
+- Get Langfuse client with `get_client()`
 - Build trace name, tags, metadata, user_id, session_id upfront
-- Initialize `CallbackHandler()` with no parameters (reads from env)
-- Call `set_trace_params()` to set trace metadata
+- Create trace with `langfuse_client.trace(name=..., user_id=..., session_id=..., tags=..., metadata=..., version=...)`
+- Create `CallbackHandler(root=trace)` to link LangChain execution to the trace
 
 ### 2. Remove Redundant update_current_trace()
 
@@ -180,6 +193,7 @@ uv run scripts/export_traces.py --name "static-code-analysis" --validate
 ## Commits
 
 1. `ce954f2` - Initial tracing improvements (removed manual spans)
-2. `36e4b97` - Fix trace naming by setting metadata in CallbackHandler constructor (incorrect API - constructor doesn't accept trace_name)
-3. `da8a6ab` - Fix: use set_trace_params() instead of constructor parameters (incorrect API - constructor doesn't accept credentials)
-4. `714b35d` - Fix: CallbackHandler reads credentials from environment (correct API - no constructor parameters)
+2. `36e4b97` - Fix trace naming by setting metadata in CallbackHandler constructor (incorrect - constructor doesn't accept trace_name)
+3. `da8a6ab` - Fix: use set_trace_params() instead of constructor parameters (incorrect - set_trace_params doesn't exist)
+4. `714b35d` - Fix: CallbackHandler reads credentials from environment (incorrect - still missing root parameter)
+5. `5404a05` - Fix: use langfuse_client.trace() with root parameter ✅ **CORRECT**
