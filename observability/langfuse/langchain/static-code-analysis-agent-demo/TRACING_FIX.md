@@ -32,17 +32,21 @@ langfuse_client.update_current_trace(
 
 ## Solution
 
-Initialize `CallbackHandler` with credentials, then use `set_trace_params()` to set trace metadata:
+Set environment variables, initialize `CallbackHandler`, then use `set_trace_params()` to set trace metadata:
 
 ```python
-# ✅ CORRECT - Initialize handler then set trace params
-langfuse_handler = CallbackHandler(
-    public_key=config.LANGFUSE_PUBLIC_KEY,
-    secret_key=config.LANGFUSE_SECRET_KEY,
-    host=config.LANGFUSE_HOST
-)
+# ✅ CORRECT - Set env vars, init handler, then set trace params
 
-# Set trace metadata
+# 1. Set environment variables (CallbackHandler reads from env)
+import os
+os.environ["LANGFUSE_PUBLIC_KEY"] = config.LANGFUSE_PUBLIC_KEY
+os.environ["LANGFUSE_SECRET_KEY"] = config.LANGFUSE_SECRET_KEY
+os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
+
+# 2. Initialize handler (reads credentials from environment)
+langfuse_handler = CallbackHandler()
+
+# 3. Set trace metadata
 langfuse_handler.set_trace_params(
     name="static-code-analysis-agent: security analysis - owner/repo",
     user_id=user_id or "anonymous",
@@ -67,16 +71,20 @@ langfuse_handler.set_trace_params(
 )
 ```
 
-**Key Point:** The `CallbackHandler` constructor only accepts credentials. Use `set_trace_params()` method to set trace name, user_id, session_id, tags, and metadata.
+**Key Points:**
+- The `CallbackHandler()` constructor takes **no parameters**
+- It reads credentials from environment variables: `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST`
+- Use `set_trace_params()` method to set trace name, user_id, session_id, tags, and metadata
 
 ## Changes Made
 
-### 1. Initialize CallbackHandler with Credentials and Set Trace Params
+### 1. Set Environment Variables and Initialize CallbackHandler
 
-**File:** `src/agent/graph.py:392-411`
+**File:** `src/agent/graph.py:475-480` (env vars), `src/agent/graph.py:392-403` (handler)
 
+- Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_HOST` environment variables
 - Build trace name, tags, metadata, user_id, session_id upfront
-- Initialize `CallbackHandler` with credentials only
+- Initialize `CallbackHandler()` with no parameters (reads from env)
 - Call `set_trace_params()` to set trace metadata
 
 ### 2. Remove Redundant update_current_trace()
@@ -172,5 +180,6 @@ uv run scripts/export_traces.py --name "static-code-analysis" --validate
 ## Commits
 
 1. `ce954f2` - Initial tracing improvements (removed manual spans)
-2. `36e4b97` - Fix trace naming by setting metadata in CallbackHandler constructor (incorrect API)
-3. `da8a6ab` - Fix: use set_trace_params() instead of constructor parameters (correct API)
+2. `36e4b97` - Fix trace naming by setting metadata in CallbackHandler constructor (incorrect API - constructor doesn't accept trace_name)
+3. `da8a6ab` - Fix: use set_trace_params() instead of constructor parameters (incorrect API - constructor doesn't accept credentials)
+4. `714b35d` - Fix: CallbackHandler reads credentials from environment (correct API - no constructor parameters)
