@@ -348,10 +348,6 @@ async def run_agent(
         if isinstance(config.LANGFUSE_HOST, str):
             os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
 
-        # Initialize handler and client
-        langfuse_handler = CallbackHandler()
-        langfuse_client = get_client()
-
         # Build descriptive trace name
         repo_parts = repository_url.rstrip('/').split('/')
         repo_name = f"{repo_parts[-2]}/{repo_parts[-1]}" if len(repo_parts) >= 2 else "unknown-repo"
@@ -360,6 +356,49 @@ async def run_agent(
         if scenario_name:
             trace_name = f"{trace_name} [{scenario_name}]"
         trace_name = f"{trace_name} - {repo_name}"
+
+        # Set user and session IDs
+        trace_user_id = user_id or "anonymous"
+        trace_session_id = session_id or f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        # Prepare tags
+        tags = [
+            "static-analysis",
+            analysis_type,
+            "langgraph",
+            "production",
+        ]
+        if scenario_name:
+            tags.append(f"scenario:{scenario_name}")
+
+        # Prepare metadata
+        metadata = {
+            "agent": config.AGENT_NAME,
+            "demo_name": config.AGENT_DEMO_NAME,
+            "version": config.AGENT_VERSION,
+            "scenario": scenario_name,
+            "repository": {
+                "url": repository_url,
+                "owner": repo_parts[-2] if len(repo_parts) >= 2 else "unknown",
+                "name": repo_parts[-1] if len(repo_parts) >= 1 else "unknown"
+            },
+            "analysis": {
+                "type": analysis_type,
+                "model": config.MODEL_NAME,
+                "temperature": config.TEMPERATURE,
+            }
+        }
+
+        # Initialize handler with trace metadata
+        langfuse_handler = CallbackHandler(
+            trace_name=trace_name,
+            user_id=trace_user_id,
+            session_id=trace_session_id,
+            tags=tags,
+            metadata=metadata,
+            version=f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
+        )
+        langfuse_client = get_client()
 
         print(f"✓ Langfuse tracing enabled: {trace_name}")
 
@@ -393,111 +432,57 @@ async def run_agent(
         "error": final_state.get("error")
     }
 
-    # Update Langfuse trace with enhanced observability data (Phase 1 improvements)
-    if langfuse_client:
-        from datetime import datetime
-
-        # Build descriptive trace name
-        repo_parts = repository_url.rstrip('/').split('/')
-        repo_name = f"{repo_parts[-2]}/{repo_parts[-1]}" if len(repo_parts) >= 2 else "unknown-repo"
-
-        trace_name = f"static-code-analysis-agent: {analysis_type} analysis"
-        if scenario_name:
-            trace_name = f"{trace_name} [{scenario_name}]"
-        trace_name = f"{trace_name} - {repo_name}"
-
-        # Set user and session IDs
-        trace_user_id = user_id or "anonymous"
-        trace_session_id = session_id or f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-
-        # Prepare tags
-        additional_tags = []
-
-        # Add status tags
-        if final_state.get("error"):
-            additional_tags.append("error")
-        else:
-            additional_tags.append("success")
-
-        # Add severity tags based on issues found
+    # Update trace with results metadata (add to existing metadata)
+    if langfuse_handler:
+        # Calculate severity breakdown
         severity_counts = {}
         for issue in final_state.get("issues_found", []):
             severity = issue.get("severity", "UNKNOWN")
             severity_counts[severity] = severity_counts.get(severity, 0) + 1
 
+        # Add result-specific tags
+        result_tags = []
+        if final_state.get("error"):
+            result_tags.append("error")
+        else:
+            result_tags.append("success")
+
         if severity_counts.get("CRITICAL", 0) > 0:
-            additional_tags.append("has-critical-issues")
+            result_tags.append("has-critical-issues")
         if severity_counts.get("HIGH", 0) > 0:
-            additional_tags.append("has-high-issues")
+            result_tags.append("has-high-issues")
 
-        # Combine with initial tags
-        all_tags = [
-            "static-analysis",
-            analysis_type,
-            "langgraph",
-            "production",
-        ]
-        if scenario_name:
-            all_tags.append(f"scenario:{scenario_name}")
-        all_tags.extend(additional_tags)
-
-        # Prepare metadata (use config for agent identity)
-        metadata = {
-            "agent": config.AGENT_NAME,
-            "demo_name": config.AGENT_DEMO_NAME,
-            "version": config.AGENT_VERSION,
-            "scenario": scenario_name,
-            "repository": {
-                "url": repository_url,
-                "owner": final_state["repository_owner"],
-                "name": final_state["repository_name"]
-            },
-            "analysis": {
-                "type": analysis_type,
-                "model": config.MODEL_NAME,
-                "temperature": config.TEMPERATURE,
-                "max_steps": final_state.get("max_steps", 20)
-            },
-            "results": {
-                "files_analyzed": len(final_state["files_analyzed"]),
-                "total_files": len(final_state["files_to_analyze"]),
-                "issues_found": len(final_state["issues_found"]),
-                "severity_breakdown": {
-                    "CRITICAL": severity_counts.get("CRITICAL", 0),
-                    "HIGH": severity_counts.get("HIGH", 0),
-                    "MEDIUM": severity_counts.get("MEDIUM", 0),
-                    "LOW": severity_counts.get("LOW", 0),
-                }
-            },
-            "execution": {
-                "steps_taken": final_state["current_step"],
-                "completed": final_state["should_continue"] == False,
-                "has_error": final_state.get("error") is not None
-            }
-        }
-
-        # Set version for A/B testing and tracking changes
-        version = f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
-
-        # Update the current trace with all improvements
+        # Update trace with results
         try:
-            langfuse_client.update_current_trace(
-                name=trace_name,
-                user_id=trace_user_id,
-                session_id=trace_session_id,
-                tags=all_tags,
-                metadata=metadata,
-                version=version
+            langfuse_handler.langfuse.score(
+                name="analysis_completeness",
+                value=len(final_state["files_analyzed"]) / max(len(final_state["files_to_analyze"]), 1),
+                comment=f"Analyzed {len(final_state['files_analyzed'])} of {len(final_state['files_to_analyze'])} files"
             )
-            print(f"✓ Trace updated with enhanced observability:")
-            print(f"  - Name: {trace_name}")
-            print(f"  - User: {trace_user_id}")
-            print(f"  - Session: {trace_session_id}")
-            print(f"  - Scenario: {scenario_name or 'N/A'}")
-            print(f"  - Tags: {', '.join(all_tags)}")
-            print(f"  - Version: {version}")
+
+            # Update metadata with results
+            langfuse_handler.update_current_observation(
+                metadata={
+                    "results": {
+                        "files_analyzed": len(final_state["files_analyzed"]),
+                        "total_files": len(final_state["files_to_analyze"]),
+                        "issues_found": len(final_state["issues_found"]),
+                        "severity_breakdown": severity_counts
+                    },
+                    "execution": {
+                        "steps_taken": final_state["current_step"],
+                        "completed": not final_state["should_continue"],
+                        "has_error": final_state.get("error") is not None
+                    }
+                }
+            )
+
+            print(f"✓ Trace results updated:")
+            print(f"  - Files analyzed: {len(final_state['files_analyzed'])}/{len(final_state['files_to_analyze'])}")
+            print(f"  - Issues found: {len(final_state['issues_found'])}")
+            print(f"  - Status tags: {', '.join(result_tags)}")
         except Exception as e:
-            print(f"⚠ Failed to update trace metadata: {e}")
+            print(f"⚠ Could not update trace results: {e}")
 
     return result
 
