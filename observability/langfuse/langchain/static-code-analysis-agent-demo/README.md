@@ -248,10 +248,10 @@ Export traces from Langfuse to validate and analyze agent performance:
 
 ```bash
 # Export recent traces (last 24 hours, default 50 traces)
-uv run scripts/export_traces.py
+unset VIRTUAL_ENV && uv run scripts/export_traces.py
 
 # Export with validation
-uv run scripts/export_traces.py --validate
+unset VIRTUAL_ENV && uv run scripts/export_traces.py --validate
 
 # Export more traces with custom filter
 uv run scripts/export_traces.py --name "static-code-analysis" --limit 100 --hours 48
