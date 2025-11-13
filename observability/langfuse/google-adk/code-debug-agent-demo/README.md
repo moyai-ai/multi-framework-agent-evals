@@ -8,6 +8,15 @@ This is a fully instrumented version of the Google ADK Code Debug Agent with com
 
 ## 🎉 Recent Updates
 
+### Unit Test Tracing Fix (2025-11-13)
+
+Unit tests now run without creating Langfuse traces:
+
+- ✅ **Disabled tracing in tests**: Automatic via `DISABLE_LANGFUSE_TRACING` env var
+- ✅ **Faster test execution**: No external API calls during testing
+- ✅ **CI/CD friendly**: Tests work without Langfuse credentials
+- ✅ **Production unaffected**: Normal execution still fully traced
+
 ### Tracing Refactoring (2025-11-13)
 
 Fixed strange/generic naming in Langfuse traces. Key improvements:
@@ -182,13 +191,28 @@ The agent can handle various error types:
 
 ### Unit Tests
 
+Unit tests automatically disable Langfuse tracing to:
+- Run faster without external API calls
+- Avoid creating traces in your Langfuse project during testing
+- Enable testing in CI/CD environments without credentials
+
+The tracing is disabled via the `DISABLE_LANGFUSE_TRACING` environment variable, which is automatically set in `tests/conftest.py`.
+
 ```bash
-# Run all tests
+# Run all tests (tracing automatically disabled)
 unset VIRTUAL_ENV && uv run pytest
 
 # Run specific test
 unset VIRTUAL_ENV && uv run pytest tests/test_agents.py::test_debug_agent
+
+# Verify tracing behavior
+python verify_tracing_fix.py
 ```
+
+**How it works:**
+1. `tests/conftest.py` sets `DISABLE_LANGFUSE_TRACING=true`
+2. `src/runner.py` checks this variable before creating traces
+3. Normal execution (without the env var) still enables full tracing
 
 ### Scenario Testing
 
