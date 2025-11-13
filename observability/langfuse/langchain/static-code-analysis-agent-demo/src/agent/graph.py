@@ -389,19 +389,7 @@ async def run_agent(
             }
         }
 
-        # Initialize handler (reads credentials from environment variables)
-        langfuse_handler = CallbackHandler()
-
-        # Set trace metadata
-        langfuse_handler.set_trace_params(
-            name=trace_name,
-            user_id=trace_user_id,
-            session_id=trace_session_id,
-            tags=tags,
-            metadata=metadata,
-            version=f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
-        )
-
+        # Get Langfuse client (will create trace later)
         langfuse_client = get_client()
 
         print(f"✓ Langfuse tracing enabled: {trace_name}")
@@ -416,9 +404,26 @@ async def run_agent(
     agent = create_agent(config, langfuse_handler)
 
     # Run the agent with Langfuse callback if available
+    # Use a trace context to properly set metadata
+    if langfuse_client:
+        # Create a trace with proper metadata
+        trace = langfuse_client.trace(
+            name=trace_name,
+            user_id=trace_user_id,
+            session_id=trace_session_id,
+            tags=tags,
+            metadata=metadata,
+            version=f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
+        )
+
+        # Create handler rooted at this trace
+        from langfuse.langchain import CallbackHandler
+        langfuse_handler = CallbackHandler(root=trace)
+
     agent_config = {
         "configurable": {"thread_id": f"analysis_{repository_url}"},
-        "recursion_limit": 50
+        "recursion_limit": 50,
+        "run_name": trace_name if langfuse_handler else None
     }
     if langfuse_handler:
         agent_config["callbacks"] = [langfuse_handler]
