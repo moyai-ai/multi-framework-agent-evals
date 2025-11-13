@@ -6,6 +6,19 @@ This is a fully instrumented version of the Google ADK Code Debug Agent with com
 
 > **Note**: This is the traced version. For the original untraced agent, see `frameworks/google-adk/code-debug-agent-demo/`
 
+## 🎉 Recent Updates
+
+### Tracing Refactoring (2025-11-13)
+
+Fixed strange/generic naming in Langfuse traces. Key improvements:
+
+- ✅ **Descriptive trace names**: "Code Debug: {agent_name}" instead of generic "invocation"
+- ✅ **Proper service naming**: Fixed "unknown_service" → "code-debug-agent"
+- ✅ **Enhanced metadata**: Better tags, structured metadata for filtering
+- ✅ **Consistent API usage**: Using correct `update_current_observation()` methods
+- ✅ **Validation tools**: New scripts to export and validate trace quality
+
+
 ## What Makes This Different?
 
 ✅ **Full Observability**: Every agent action traced with Langfuse
@@ -14,8 +27,8 @@ This is a fully instrumented version of the Google ADK Code Debug Agent with com
 ✅ **Error Capture**: Comprehensive error tracking in production
 ✅ **Performance Metrics**: Execution time, latency, and throughput analysis
 ✅ **User Context**: Session and user tracking for debugging
+✅ **Proper Naming**: Descriptive trace names for easy debugging
 
-See [COMPARISON.md](../COMPARISON.md) for detailed comparison with the original agent.
 
 ## Features
 
@@ -201,25 +214,80 @@ Create custom scenarios in JSON format:
 }
 ```
 
+## Trace Export and Validation
+
+### Export Traces from Langfuse
+
+Use the export script to download and analyze traces. The scripts use `uv` for dependency management:
+
+```bash
+# Export recent traces
+unset VIRTUAL_ENV && uv run scripts/export_traces.py --output reports/exported_traces.json --limit 50
+
+# Export and validate trace naming
+unset VIRTUAL_ENV && uv run scripts/export_traces.py --validate
+
+# Filter by trace name
+unset VIRTUAL_ENV && uv run scripts/export_traces.py --name "Code Debug" --limit 100
+
+# Filter by tag
+unset VIRTUAL_ENV && uv run scripts/export_traces.py --tag "scenario-test"
+```
+
+**Note**: The scripts use uv's inline script metadata (PEP 723), so dependencies are automatically managed. No separate virtual environment setup is needed!
+
+### Test Tracing Setup
+
+Verify that tracing is working correctly:
+
+```bash
+# Run a quick tracing test with uv
+uv run scripts/test_tracing.py
+
+# Or run directly if executable
+./scripts/test_tracing.py
+```
+
+This will:
+1. Execute a simple agent call with tracing
+2. Run a test scenario
+3. Flush traces to Langfuse
+4. Provide instructions for validation
+
+### What Good Traces Look Like
+
+After the refactoring, your traces should have:
+
+- **Descriptive names**: "Code Debug: debug_agent" instead of "invocation"
+- **Proper service name**: "code-debug-agent" instead of "unknown_service"
+- **Rich metadata**: Framework, agent type, programming language
+- **Structured tags**: "google-adk", "code-debug", agent name, language
+- **Clear hierarchy**: Proper nesting of observations
+
 ## Project Structure
 
 ```
 code-debug-agent-demo/
 ├── src/
 │   ├── __init__.py
-│   ├── agents.py                 # Agent definitions
-│   ├── tools.py                  # Stack Exchange tools
+│   ├── agents.py                 # Agent definitions with tracing
+│   ├── tools.py                  # Stack Exchange tools (traced)
 │   ├── prompts.py                # System prompts
 │   ├── runner.py                 # Scenario runner
+│   ├── traced_runner.py          # Traced agent runner (NEW)
 │   ├── services/
 │   │   └── stackexchange_service.py  # API wrapper
 │   └── scenarios/
-│       └── common_errors.json    # Test scenarios
+│       └── *.json                # Test scenarios
+├── scripts/                      # Utility scripts (NEW)
+│   ├── export_traces.py         # Export and validate traces
+│   └── test_tracing.py          # Test tracing setup
 ├── tests/
 │   ├── conftest.py
 │   └── test_agents.py
 ├── pyproject.toml
 ├── README.md
+├── TRACING_REFACTOR.md          # Detailed refactoring docs (NEW)
 └── .env.example
 ```
 
@@ -293,19 +361,6 @@ Enable debug logging:
 import logging
 logging.basicConfig(level=logging.DEBUG)
 ```
-
-## Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
-
-## License
-
-This project is provided as a demonstration of Google ADK capabilities.
 
 ## Acknowledgments
 

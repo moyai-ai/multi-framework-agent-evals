@@ -10,11 +10,22 @@ full observability including:
 
 import asyncio
 import logging
+import os
 from typing import Optional, Dict, Any, AsyncIterator
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 from langfuse import observe, get_client
 from src.agents import debug_agent, quick_debug_agent, AGENTS
+
+# Configure OpenTelemetry resource attributes for better trace naming
+os.environ.setdefault("OTEL_SERVICE_NAME", "code-debug-agent")
+os.environ.setdefault("OTEL_RESOURCE_ATTRIBUTES", "service.name=code-debug-agent,deployment.environment=production")
+
+# Note: Google ADK's OpenTelemetry instrumentation creates generic "invocation" and "call"
+# span names. We use Langfuse's update_current_trace() to override the trace name, but this
+# only affects the Langfuse trace name, not the underlying OpenTelemetry span names.
+# The Langfuse UI will show our custom trace names (e.g., "Code Debug: debug_agent"),
+# which is what matters for observability.
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +68,6 @@ class TracedAgentRunner:
         self.langfuse = get_client()
         logger.info(f"Initialized TracedAgentRunner with agent: {agent_name}")
 
-    @observe(as_type="agent", name="debug_agent_execution")
     async def run_traced(
         self,
         prompt: str,
@@ -70,6 +80,11 @@ class TracedAgentRunner:
         This method wraps the agent execution with Langfuse observability,
         capturing all tool calls, context providers, and sub-agent executions.
 
+        Note: We do NOT use @observe() decorator here because Google ADK already
+        creates OpenTelemetry traces. Using @observe() would create a child trace
+        instead of updating the root trace. By calling update_current_trace()
+        without @observe(), we update the actual Google ADK root trace.
+
         Args:
             prompt: User prompt/query
             user_id: Optional user identifier
@@ -81,28 +96,64 @@ class TracedAgentRunner:
         """
         langfuse = get_client()
 
-        # Update trace with user context
+        # Get the current OpenTelemetry trace context
+        try:
+            from opentelemetry import trace
+            current_span = trace.get_current_span()
+            trace_id = None
+            if current_span and current_span.is_recording():
+                # Get the trace ID from OpenTelemetry span
+                trace_id = format(current_span.get_span_context().trace_id, '032x')
+                print(f"[TRACE] OpenTelemetry trace ID: {trace_id}")
+        except Exception as e:
+            print(f"[TRACE] Could not get OpenTelemetry trace ID: {e}")
+            trace_id = None
+
+        # Update trace with user context and descriptive naming
+        # This updates the ROOT trace created by Google ADK's OpenTelemetry instrumentation
         trace_metadata = {
             "agent_name": self.agent_name,
             "app_name": self.app_name,
             "prompt_length": len(prompt),
+            "framework": "google-adk",
+            "agent_type": "code-debug-agent",
+            "prompt_preview": prompt[:200],
         }
         if metadata:
             trace_metadata.update(metadata)
 
-        langfuse.update_current_trace(
-            name=f"Agent Execution: {self.agent_name}",
-            user_id=user_id or "anonymous",
-            session_id=session_id or "default",
-            tags=["google-adk", "debug-agent", self.agent_name],
-            metadata=trace_metadata,
-        )
-
-        # Update current span with input
-        langfuse.update_current_span(
-            input={"prompt": prompt, "agent": self.agent_name},
-            metadata={"agent_model": getattr(self.agent, "model", "unknown")},
-        )
+        # Use descriptive trace name that shows in Langfuse UI
+        # This replaces the generic "invocation" name from Google ADK
+        try:
+            langfuse.update_current_trace(
+                name=f"Code Debug: {self.agent_name}",
+                user_id=user_id or "anonymous",
+                session_id=session_id or "default",
+                tags=["google-adk", "code-debug", self.agent_name, "production"],
+                metadata=trace_metadata,
+                input={"prompt": prompt, "agent": self.agent_name},
+            )
+            print(f"[TRACE] Updated Langfuse trace with name: Code Debug: {self.agent_name}")
+        except Exception as e:
+            print(f"[TRACE] Could not update Langfuse trace: {e}")
+            import traceback
+            traceback.print_exc()
+            # If update fails, try to create a manual trace entry
+            if trace_id:
+                try:
+                    langfuse.trace(
+                        id=trace_id,
+                        name=f"Code Debug: {self.agent_name}",
+                        user_id=user_id or "anonymous",
+                        session_id=session_id or "default",
+                        tags=["google-adk", "code-debug", self.agent_name, "production"],
+                        metadata=trace_metadata,
+                        input={"prompt": prompt, "agent": self.agent_name},
+                    )
+                    print(f"[TRACE] Created manual Langfuse trace entry with ID: {trace_id}")
+                except Exception as e2:
+                    print(f"[TRACE] Could not create manual trace entry: {e2}")
+                    traceback.print_exc()
 
         try:
             # Create or get existing session
@@ -137,9 +188,9 @@ class TracedAgentRunner:
                     event_dict = event.__dict__
                     response_parts.append(str(event_dict))
 
-                    # Update span with event information
-                    if event_count % 5 == 0:  # Update periodically to avoid too many updates
-                        langfuse.update_current_span(
+                    # Update trace metadata periodically
+                    if event_count % 10 == 0:  # Update every 10 events
+                        langfuse.update_current_trace(
                             metadata={
                                 "events_processed": event_count,
                                 "latest_event_type": type(event).__name__,
@@ -149,12 +200,16 @@ class TracedAgentRunner:
                 yield event
 
             # Final update with complete results
-            langfuse.update_current_span(
+            langfuse.update_current_trace(
                 output={
                     "total_events": event_count,
                     "response_summary": "\n".join(response_parts[:5]),  # First 5 events
                 },
-                metadata={"execution_completed": True},
+                metadata={
+                    **trace_metadata,
+                    "execution_completed": True,
+                    "total_events_processed": event_count,
+                },
             )
 
             logger.info(f"Agent execution completed with {event_count} events")
@@ -162,14 +217,18 @@ class TracedAgentRunner:
         except Exception as e:
             logger.error(f"Error during agent execution: {e}", exc_info=True)
 
-            # Log error to Langfuse
-            langfuse.update_current_span(
-                level="ERROR", status_message=str(e), metadata={"error_type": type(e).__name__}
+            # Log error to Langfuse trace
+            langfuse.update_current_trace(
+                metadata={
+                    **trace_metadata,
+                    "error_occurred": True,
+                    "error_type": type(e).__name__,
+                    "error_details": str(e)[:500],  # Truncate long errors
+                }
             )
 
             raise
 
-    @observe(as_type="chain", name="debug_query")
     async def query(
         self,
         prompt: str,
@@ -199,16 +258,16 @@ class TracedAgentRunner:
 
         final_response = "\n".join(response_parts)
 
-        # Update span with final output
+        # Update trace with final output
         langfuse = get_client()
-        langfuse.update_current_span(
-            output={"response": final_response, "response_length": len(final_response)}
+        langfuse.update_current_trace(
+            output={"response": final_response, "response_length": len(final_response)},
+            metadata={"query_completed": True}
         )
 
         return final_response
 
 
-@observe(as_type="chain", name="run_traced_scenario")
 async def run_traced_scenario(
     scenario_data: Dict[str, Any],
     agent_name: str = "debug_agent",
@@ -218,6 +277,10 @@ async def run_traced_scenario(
 
     This function is designed to work with the scenario runner and provides
     comprehensive tracing for each scenario execution.
+
+    Note: We don't use @observe() here because the TracedAgentRunner will
+    update the root Google ADK trace. Using @observe() would create an extra
+    child trace that we don't need.
 
     Args:
         scenario_data: Scenario configuration including prompt and expected results
@@ -232,17 +295,19 @@ async def run_traced_scenario(
     # Extract scenario information
     scenario_name = scenario_data.get("name", "unnamed_scenario")
     prompt = scenario_data.get("error_message", scenario_data.get("prompt", ""))
+    programming_language = scenario_data.get("programming_language", "unknown")
 
-    # Update trace with scenario information
+    # Update root trace with scenario information
     langfuse.update_current_trace(
         name=f"Scenario: {scenario_name}",
-        tags=["scenario-test", agent_name],
-        metadata={"scenario_data": scenario_data},
-    )
-
-    langfuse.update_current_span(
-        input={"scenario": scenario_name, "prompt": prompt},
-        metadata={"agent": agent_name},
+        tags=["scenario-test", "evaluation", agent_name, programming_language],
+        metadata={
+            "scenario_name": scenario_name,
+            "programming_language": programming_language,
+            "agent_name": agent_name,
+            "test_type": "scenario_execution",
+        },
+        input={"scenario": scenario_name, "prompt": prompt, "language": programming_language},
     )
 
     try:
@@ -260,7 +325,14 @@ async def run_traced_scenario(
             "agent_used": agent_name,
         }
 
-        langfuse.update_current_span(output=result, metadata={"execution_success": True})
+        langfuse.update_current_trace(
+            output=result,
+            metadata={
+                "execution_success": True,
+                "scenario_completed": True,
+                "response_length": len(response),
+            }
+        )
 
         return result
 
@@ -268,8 +340,13 @@ async def run_traced_scenario(
         logger.error(f"Error running scenario {scenario_name}: {e}", exc_info=True)
 
         # Log error to Langfuse
-        langfuse.update_current_span(
-            level="ERROR", status_message=str(e), metadata={"scenario_failed": True}
+        langfuse.update_current_trace(
+            metadata={
+                "scenario_failed": True,
+                "error_type": type(e).__name__,
+                "scenario_name": scenario_name,
+                "error_details": str(e)[:500],
+            }
         )
 
         return {
@@ -281,7 +358,6 @@ async def run_traced_scenario(
 
 
 # Convenience function for running the traced agent
-@observe(as_type="chain", name="main_workflow")
 async def run_debug_agent_traced(
     prompt: str,
     agent_name: str = "debug_agent",
