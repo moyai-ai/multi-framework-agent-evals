@@ -389,15 +389,23 @@ async def run_agent(
             }
         }
 
-        # Initialize handler with trace metadata
+        # Initialize handler
         langfuse_handler = CallbackHandler(
-            trace_name=trace_name,
+            public_key=config.LANGFUSE_PUBLIC_KEY,
+            secret_key=config.LANGFUSE_SECRET_KEY,
+            host=config.LANGFUSE_HOST
+        )
+
+        # Set trace metadata
+        langfuse_handler.set_trace_params(
+            name=trace_name,
             user_id=trace_user_id,
             session_id=trace_session_id,
             tags=tags,
             metadata=metadata,
             version=f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
         )
+
         langfuse_client = get_client()
 
         print(f"✓ Langfuse tracing enabled: {trace_name}")
