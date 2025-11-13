@@ -9,6 +9,9 @@ from dotenv import load_dotenv
 # Load environment variables for testing
 load_dotenv()
 
+# Disable Langfuse tracing during unit tests
+os.environ["DISABLE_LANGFUSE_TRACING"] = "true"
+
 
 @pytest.fixture(scope="session")
 def event_loop():

@@ -23,6 +23,9 @@ import httpx
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Check if tracing should be disabled (e.g., during unit tests)
+DISABLE_TRACING = os.getenv("DISABLE_LANGFUSE_TRACING", "false").lower() == "true"
+
 
 def update_trace_via_api(trace_id: str, name: str, tags: list, metadata: dict, user_id: str = None, session_id: str = None):
     """Update a trace via Langfuse REST API ingestion endpoint.
@@ -182,43 +185,45 @@ class ScenarioRunner:
         )
 
         # Get OpenTelemetry trace context and update Langfuse
-        langfuse = get_client()
+        langfuse = None
         trace_id = None
-        try:
-            from opentelemetry import trace as otel_trace
-            current_span = otel_trace.get_current_span()
-            if current_span and current_span.is_recording():
-                # Get the trace ID from OpenTelemetry
-                trace_id = format(current_span.get_span_context().trace_id, '032x')
-                print(f"[TRACE] OpenTelemetry trace ID: {trace_id}")
+        if not DISABLE_TRACING:
+            langfuse = get_client()
+            try:
+                from opentelemetry import trace as otel_trace
+                current_span = otel_trace.get_current_span()
+                if current_span and current_span.is_recording():
+                    # Get the trace ID from OpenTelemetry
+                    trace_id = format(current_span.get_span_context().trace_id, '032x')
+                    print(f"[TRACE] OpenTelemetry trace ID: {trace_id}")
 
-                # Use Langfuse's trace() method to create/update the trace with this ID
-                langfuse.trace(
-                    id=trace_id,
-                    name=f"Scenario: {scenario.name}",
-                    user_id="test_user",
-                    session_id=scenario.name,
-                    tags=["scenario-test", "evaluation", self.agent.name, scenario.programming_language or "unknown"],
-                    metadata={
-                        "scenario_name": scenario.name,
-                        "programming_language": scenario.programming_language,
-                        "framework": scenario.framework,
-                        "agent_name": self.agent.name,
-                        "test_type": "scenario_execution",
-                    },
-                    input={
-                        "scenario": scenario.name,
-                        "error_message": scenario.error_message,
-                        "language": scenario.programming_language,
-                    }
-                )
-                print(f"[TRACE] Created Langfuse trace with ID {trace_id} and name: Scenario: {scenario.name}")
-            else:
-                print(f"[TRACE] No active OpenTelemetry span found")
-        except Exception as e:
-            print(f"[TRACE] Could not create trace: {e}")
-            import traceback
-            traceback.print_exc()
+                    # Use Langfuse's trace() method to create/update the trace with this ID
+                    langfuse.trace(
+                        id=trace_id,
+                        name=f"Scenario: {scenario.name}",
+                        user_id="test_user",
+                        session_id=scenario.name,
+                        tags=["scenario-test", "evaluation", self.agent.name, scenario.programming_language or "unknown"],
+                        metadata={
+                            "scenario_name": scenario.name,
+                            "programming_language": scenario.programming_language,
+                            "framework": scenario.framework,
+                            "agent_name": self.agent.name,
+                            "test_type": "scenario_execution",
+                        },
+                        input={
+                            "scenario": scenario.name,
+                            "error_message": scenario.error_message,
+                            "language": scenario.programming_language,
+                        }
+                    )
+                    print(f"[TRACE] Created Langfuse trace with ID {trace_id} and name: Scenario: {scenario.name}")
+                else:
+                    print(f"[TRACE] No active OpenTelemetry span found")
+            except Exception as e:
+                print(f"[TRACE] Could not create trace: {e}")
+                import traceback
+                traceback.print_exc()
 
         try:
             # Build the initial error message
@@ -243,22 +248,23 @@ class ScenarioRunner:
             report.errors.append(str(e))
 
             # Update trace with error
-            try:
-                langfuse.update_current_trace(
-                    metadata={
-                        "scenario_failed": True,
-                        "error_type": type(e).__name__,
-                        "error_details": str(e)[:500],
-                    }
-                )
-            except:
-                pass
+            if not DISABLE_TRACING and langfuse:
+                try:
+                    langfuse.update_current_trace(
+                        metadata={
+                            "scenario_failed": True,
+                            "error_type": type(e).__name__,
+                            "error_details": str(e)[:500],
+                        }
+                    )
+                except:
+                    pass
 
         # Calculate execution time
         report.execution_time = (datetime.now() - start_time).total_seconds()
 
         # Update trace with final results using the trace ID
-        if trace_id:
+        if not DISABLE_TRACING and trace_id and langfuse:
             try:
                 langfuse.trace(
                     id=trace_id,
@@ -309,7 +315,7 @@ class ScenarioRunner:
             new_message=content
         ):
             # Capture trace ID on first event and update the trace
-            if trace_id_captured is None:
+            if not DISABLE_TRACING and trace_id_captured is None:
                 try:
                     from opentelemetry import trace as otel_trace
                     current_span = otel_trace.get_current_span()
