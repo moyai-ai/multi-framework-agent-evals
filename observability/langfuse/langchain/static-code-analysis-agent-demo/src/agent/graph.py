@@ -404,21 +404,10 @@ async def run_agent(
     agent = create_agent(config, langfuse_handler)
 
     # Run the agent with Langfuse callback if available
-    # Use a trace context to properly set metadata
     if langfuse_client:
-        # Create a trace with proper metadata
-        trace = langfuse_client.trace(
-            name=trace_name,
-            user_id=trace_user_id,
-            session_id=trace_session_id,
-            tags=tags,
-            metadata=metadata,
-            version=f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
-        )
-
-        # Create handler rooted at this trace
+        # Create handler
         from langfuse.langchain import CallbackHandler
-        langfuse_handler = CallbackHandler(root=trace)
+        langfuse_handler = CallbackHandler()
 
     agent_config = {
         "configurable": {"thread_id": f"analysis_{repository_url}"},
@@ -428,7 +417,23 @@ async def run_agent(
     if langfuse_handler:
         agent_config["callbacks"] = [langfuse_handler]
 
+    # Execute agent
     final_state = await agent.ainvoke(initial_state, config=agent_config)
+
+    # Update trace with metadata after execution (within same context)
+    if langfuse_client:
+        try:
+            langfuse_client.update_current_trace(
+                name=trace_name,
+                user_id=trace_user_id,
+                session_id=trace_session_id,
+                tags=tags,
+                metadata=metadata,
+                version=f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
+            )
+            langfuse_client.flush()
+        except Exception as e:
+            print(f"⚠ Could not update trace: {e}")
 
     # Extract and return results
     result = {
