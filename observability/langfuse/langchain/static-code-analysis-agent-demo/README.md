@@ -240,6 +240,54 @@ unset VIRTUAL_ENV && uv run pytest -m scenario -v
 
 **Note:** All tests automatically use mock OpenGrep regardless of your environment settings. This is configured in `tests/conftest.py` to ensure tests run quickly and don't require external tools.
 
+## Langfuse Tracing & Evaluation Scripts
+
+### Export Traces
+
+Export traces from Langfuse to validate and analyze agent performance:
+
+```bash
+# Export recent traces (last 24 hours, default 50 traces)
+uv run scripts/export_traces.py
+
+# Export with validation
+uv run scripts/export_traces.py --validate
+
+# Export more traces with custom filter
+uv run scripts/export_traces.py --name "static-code-analysis" --limit 100 --hours 48
+
+# Export to custom output file
+uv run scripts/export_traces.py --output reports/my_traces.json
+
+# Filter by tags
+uv run scripts/export_traces.py --tag "security" --limit 20
+```
+
+The export script will:
+- Fetch traces from Langfuse REST API
+- Generate statistics (trace names, tags, users, sessions)
+- Export to JSON format
+- Validate trace naming conventions (if --validate flag is used)
+
+### Test Tracing
+
+Quickly verify that Langfuse tracing is working correctly:
+
+```bash
+# Run tracing verification tests
+uv run scripts/test_tracing.py
+```
+
+This script will:
+- Execute a simple security analysis
+- Execute a quality analysis
+- Verify that traces are properly named
+- Print trace details and verification steps
+
+After running, check your Langfuse UI for traces named:
+- `static-code-analysis-agent: security analysis [tracing_verification] - example/test-repo`
+- `static-code-analysis-agent: quality analysis [quality_check] - example/test-repo`
+
 ## Scenario Format
 
 Create custom analysis scenarios in JSON:

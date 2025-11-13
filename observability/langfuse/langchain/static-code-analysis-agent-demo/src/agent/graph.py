@@ -75,20 +75,6 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
     # Define nodes
     async def reasoning_node(state: AgentState) -> AgentState:
         """Node for reasoning about the next action with Langfuse tracing."""
-        # Start span for reasoning node if Langfuse is enabled
-        span_context = None
-        if langfuse_client:
-            span_context = langfuse_client.start_as_current_span(
-                name="reasoning-node",
-                input={
-                    "current_step": state['current_step'],
-                    "files_to_analyze": len(state['files_to_analyze']),
-                    "files_analyzed": len(state['files_analyzed']),
-                    "issues_found": len(state['issues_found'])
-                }
-            )
-            span_context.__enter__()
-
         print(f"\nDEBUG reasoning_node: Step {state['current_step']}/{state['max_steps']}")
         print(f"  Files to analyze: {len(state['files_to_analyze'])}")
         print(f"  Files analyzed: {len(state['files_analyzed'])}")
@@ -99,9 +85,6 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
             print("DEBUG: Max steps reached, stopping")
             state["should_continue"] = False
             state["final_answer"] = "Maximum steps reached. Generating final report..."
-            if span_context:
-                span_context.update(output={"status": "max_steps_reached"})
-                span_context.__exit__(None, None, None)
             return state
 
         # Check if analysis is complete
@@ -161,43 +144,10 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
         state["messages"].append(response)
         state["current_step"] += 1
 
-        if span_context:
-            try:
-                span_context.update(
-                    output={
-                        "has_tool_calls": has_tools,
-                        "consecutive_no_tool_calls": state["consecutive_no_tool_calls"],
-                        "should_continue": state["should_continue"]
-                    }
-                )
-            except Exception:
-                pass  # Ignore span update errors
-            finally:
-                span_context.__exit__(None, None, None)
-
         return state
 
     async def action_node(state: AgentState) -> AgentState:
         """Node for executing tools based on LLM decision."""
-        # Start span for action node if Langfuse is enabled
-        span_context = None
-        if langfuse_client:
-            # Get the last message which should contain tool calls
-            last_message = state["messages"][-1]
-            tool_calls_info = []
-            if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
-                tool_calls_info = [tc.get('name', str(tc)) for tc in last_message.tool_calls]
-
-            span_context = langfuse_client.start_as_current_span(
-                name="action-node",
-                input={
-                    "current_step": state['current_step'],
-                    "tool_calls": tool_calls_info,
-                    "num_tools": len(tool_calls_info)
-                }
-            )
-            span_context.__enter__()
-
         # Get the last message which should contain tool calls
         last_message = state["messages"][-1]
 
@@ -214,57 +164,16 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
                     tool_call.get("args", {})
                 )
 
-            if span_context:
-                try:
-                    span_context.update(
-                        output={
-                            "tools_executed": [tc["name"] for tc in last_message.tool_calls],
-                            "num_results": len(last_message.tool_calls)
-                        }
-                    )
-                except Exception:
-                    pass
-                finally:
-                    span_context.__exit__(None, None, None)
-
             return result
-
-        if span_context:
-            try:
-                span_context.update(output={"status": "no_tool_calls"})
-            except Exception:
-                pass
-            finally:
-                span_context.__exit__(None, None, None)
 
         return state
 
     async def observation_node(state: AgentState) -> AgentState:
         """Node for observing results and updating state."""
-        # Start span for observation node if Langfuse is enabled
-        span_context = None
-        if langfuse_client:
-            span_context = langfuse_client.start_as_current_span(
-                name="observation-node",
-                input={
-                    "current_step": state['current_step'],
-                    "files_analyzed": len(state['files_analyzed']),
-                    "issues_found": len(state['issues_found'])
-                }
-            )
-            span_context.__enter__()
-
         # Process ALL tool execution results (may be multiple from parallel tool calls)
         tool_messages = [msg for msg in state["messages"] if isinstance(msg, ToolMessage)]
 
         if not tool_messages:
-            if span_context:
-                try:
-                    span_context.update(output={"status": "no_tool_messages"})
-                except Exception:
-                    pass
-                finally:
-                    span_context.__exit__(None, None, None)
             return state
 
         # Process the most recent batch of tool messages
@@ -325,37 +234,10 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
 
         print(f"  Total Progress: {len(state['files_analyzed'])}/{len(state['files_to_analyze'])} files, {len(state['issues_found'])} issues")
 
-        if span_context:
-            try:
-                span_context.update(
-                    output={
-                        "files_processed": len(state['files_analyzed']),
-                        "new_issues": len(state['issues_found']),
-                        "files_to_analyze": len(state['files_to_analyze'])
-                    }
-                )
-            except Exception:
-                pass
-            finally:
-                span_context.__exit__(None, None, None)
-
         return state
 
     async def report_node(state: AgentState) -> AgentState:
         """Node for generating the final report."""
-        # Start span for report node if Langfuse is enabled
-        span_context = None
-        if langfuse_client:
-            span_context = langfuse_client.start_as_current_span(
-                name="report-node",
-                input={
-                    "files_analyzed": len(state['files_analyzed']),
-                    "issues_found": len(state['issues_found']),
-                    "analysis_type": state["analysis_type"]
-                }
-            )
-            span_context.__enter__()
-
         # Generate summary of findings
         issues_summary = await analysis_tools.summarize_findings.ainvoke(state["issues_found"])
 
@@ -379,19 +261,6 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
 
         state["final_answer"] = response.content
         state["should_continue"] = False
-
-        if span_context:
-            try:
-                span_context.update(
-                    output={
-                        "report_generated": True,
-                        "report_length": len(response.content)
-                    }
-                )
-            except Exception:
-                pass
-            finally:
-                span_context.__exit__(None, None, None)
 
         return state
 
