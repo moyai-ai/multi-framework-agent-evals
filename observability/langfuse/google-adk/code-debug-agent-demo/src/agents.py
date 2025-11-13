@@ -18,6 +18,7 @@ DEFAULT_MODEL = "gemini-2.0-flash"
 MODEL = os.getenv("GOOGLE_MODEL", DEFAULT_MODEL)
 
 
+@observe(as_type="span", name="format_agent_response")
 def _format_debug_response(
     callback_context: CallbackContext,
     llm_response: LlmResponse,
@@ -45,13 +46,17 @@ def _format_debug_response(
             # Update current span with output
             langfuse.update_current_span(
                 output={"response_preview": llm_response.text[:500]},
-                metadata={"response_length": len(llm_response.text)}
+                metadata={
+                    "response_length": len(llm_response.text),
+                    "callback_type": "after_model"
+                }
             )
         elif hasattr(llm_response, 'content'):
             # Log content if available
             logger.debug(f"Debug agent response content available")
             langfuse.update_current_span(
-                output={"content_available": True}
+                output={"content_available": True},
+                metadata={"callback_type": "after_model"}
             )
 
         # Could add additional formatting here if needed
@@ -63,7 +68,8 @@ def _format_debug_response(
             langfuse = get_client()
             langfuse.update_current_span(
                 level="ERROR",
-                status_message=str(e)
+                status_message=str(e),
+                metadata={"error_in": "format_response_callback"}
             )
         except:
             pass

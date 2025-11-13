@@ -16,9 +16,77 @@ warnings.filterwarnings("ignore", message=".*@model_validator.*mode='after'.*", 
 
 from google.adk.runners import InMemoryRunner
 from src.agents import get_initial_agent, get_agent_by_name, list_agents
+from langfuse import get_client
+import os
+import httpx
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def update_trace_via_api(trace_id: str, name: str, tags: list, metadata: dict, user_id: str = None, session_id: str = None):
+    """Update a trace via Langfuse REST API ingestion endpoint.
+
+    Args:
+        trace_id: The OpenTelemetry trace ID
+        name: New trace name
+        tags: List of tags
+        metadata: Metadata dict
+        user_id: Optional user ID
+        session_id: Optional session ID
+    """
+    try:
+        public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
+        secret_key = os.getenv("LANGFUSE_SECRET_KEY")
+        host = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+
+        if not public_key or not secret_key:
+            print("[TRACE] Missing Langfuse credentials")
+            return
+
+        # Use the ingestion API to update the trace
+        url = f"{host}/api/public/ingestion"
+
+        # Generate a unique event ID for this update
+        import uuid
+        event_id = str(uuid.uuid4())
+
+        payload = {
+            "batch": [{
+                "id": event_id,
+                "type": "trace-create",
+                "timestamp": datetime.now().isoformat() + "Z",
+                "body": {
+                    "id": trace_id,
+                    "name": name,
+                    "userId": user_id,
+                    "sessionId": session_id,
+                    "tags": tags,
+                    "metadata": metadata,
+                }
+            }]
+        }
+
+        with httpx.Client(timeout=10.0) as client:
+            response = client.post(
+                url,
+                json=payload,
+                auth=(public_key, secret_key),
+            )
+
+            if response.status_code in [200, 201, 207]:
+                print(f"[TRACE] API Response: {response.status_code}")
+                print(f"[TRACE] Response body: {response.text[:500]}")
+                print(f"[TRACE] Successfully updated trace {trace_id} via API")
+                return True
+            else:
+                print(f"[TRACE] Failed to update trace: {response.status_code}")
+                print(f"[TRACE] Response: {response.text[:500]}")
+                return False
+
+    except Exception as e:
+        print(f"[TRACE] Error updating trace via API: {e}")
+        return False
 
 
 @dataclass
@@ -113,6 +181,45 @@ class ScenarioRunner:
             validation_results={}
         )
 
+        # Get OpenTelemetry trace context and update Langfuse
+        langfuse = get_client()
+        trace_id = None
+        try:
+            from opentelemetry import trace as otel_trace
+            current_span = otel_trace.get_current_span()
+            if current_span and current_span.is_recording():
+                # Get the trace ID from OpenTelemetry
+                trace_id = format(current_span.get_span_context().trace_id, '032x')
+                print(f"[TRACE] OpenTelemetry trace ID: {trace_id}")
+
+                # Use Langfuse's trace() method to create/update the trace with this ID
+                langfuse.trace(
+                    id=trace_id,
+                    name=f"Scenario: {scenario.name}",
+                    user_id="test_user",
+                    session_id=scenario.name,
+                    tags=["scenario-test", "evaluation", self.agent.name, scenario.programming_language or "unknown"],
+                    metadata={
+                        "scenario_name": scenario.name,
+                        "programming_language": scenario.programming_language,
+                        "framework": scenario.framework,
+                        "agent_name": self.agent.name,
+                        "test_type": "scenario_execution",
+                    },
+                    input={
+                        "scenario": scenario.name,
+                        "error_message": scenario.error_message,
+                        "language": scenario.programming_language,
+                    }
+                )
+                print(f"[TRACE] Created Langfuse trace with ID {trace_id} and name: Scenario: {scenario.name}")
+            else:
+                print(f"[TRACE] No active OpenTelemetry span found")
+        except Exception as e:
+            print(f"[TRACE] Could not create trace: {e}")
+            import traceback
+            traceback.print_exc()
+
         try:
             # Build the initial error message
             initial_message = scenario.error_message
@@ -124,27 +231,61 @@ class ScenarioRunner:
             # Execute the conversation
             if scenario.conversation:
                 for turn in scenario.conversation:
-                    await self._execute_turn(turn, report)
+                    await self._execute_turn(turn, report, scenario.name)
             else:
                 # Single turn with just the error message
                 turn = ConversationTurn(user_input=initial_message)
-                await self._execute_turn(turn, report)
+                await self._execute_turn(turn, report, scenario.name)
 
         except Exception as e:
             logger.error(f"Error in scenario {scenario.name}: {e}")
             report.success = False
             report.errors.append(str(e))
 
+            # Update trace with error
+            try:
+                langfuse.update_current_trace(
+                    metadata={
+                        "scenario_failed": True,
+                        "error_type": type(e).__name__,
+                        "error_details": str(e)[:500],
+                    }
+                )
+            except:
+                pass
+
         # Calculate execution time
         report.execution_time = (datetime.now() - start_time).total_seconds()
+
+        # Update trace with final results using the trace ID
+        if trace_id:
+            try:
+                langfuse.trace(
+                    id=trace_id,
+                    output={
+                        "success": report.success,
+                        "tools_used": report.tools_used,
+                        "execution_time": report.execution_time,
+                    },
+                    metadata={
+                        "execution_completed": True,
+                        "total_tools_used": len(report.tools_used),
+                        "validation_results": report.validation_results,
+                    }
+                )
+                print(f"[TRACE] Updated trace {trace_id} with final results")
+            except Exception as e:
+                print(f"[TRACE] Could not update trace with results: {e}")
+
         return report
 
-    async def _execute_turn(self, turn: ConversationTurn, report: ScenarioReport):
+    async def _execute_turn(self, turn: ConversationTurn, report: ScenarioReport, scenario_name: str = "unknown"):
         """Execute a single conversation turn.
 
         Args:
             turn: The conversation turn to execute
             report: Report to update with results
+            scenario_name: Name of the scenario for trace naming
         """
         logger.info(f"User input: {turn.user_input[:100]}...")
 
@@ -160,12 +301,40 @@ class ScenarioRunner:
         # Run the agent
         messages = []
         tools_called = []
+        trace_id_captured = None
 
         async for event in self.runner.run_async(
             user_id=self.session.user_id,
             session_id=self.session.id,
             new_message=content
         ):
+            # Capture trace ID on first event and update the trace
+            if trace_id_captured is None:
+                try:
+                    from opentelemetry import trace as otel_trace
+                    current_span = otel_trace.get_current_span()
+                    if current_span and current_span.is_recording():
+                        trace_id_captured = format(current_span.get_span_context().trace_id, '032x')
+                        print(f"[TRACE] Captured trace ID: {trace_id_captured}")
+
+                        # Update the trace via REST API
+                        update_trace_via_api(
+                            trace_id=trace_id_captured,
+                            name=f"Scenario: {scenario_name}",
+                            tags=["scenario-test", "evaluation", self.agent.name],
+                            metadata={
+                                "scenario_name": scenario_name,
+                                "agent_name": self.agent.name,
+                                "framework": "google-adk",
+                            },
+                            user_id=self.session.user_id,
+                            session_id=scenario_name,
+                        )
+                except Exception as e:
+                    print(f"[TRACE] Error updating trace: {e}")
+                    import traceback
+                    traceback.print_exc()
+
             if hasattr(event, 'content'):
                 if hasattr(event.content, 'parts'):
                     for part in event.content.parts:
