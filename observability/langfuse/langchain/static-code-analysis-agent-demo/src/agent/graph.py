@@ -75,20 +75,6 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
     # Define nodes
     async def reasoning_node(state: AgentState) -> AgentState:
         """Node for reasoning about the next action with Langfuse tracing."""
-        # Start span for reasoning node if Langfuse is enabled
-        span_context = None
-        if langfuse_client:
-            span_context = langfuse_client.start_as_current_span(
-                name="reasoning-node",
-                input={
-                    "current_step": state['current_step'],
-                    "files_to_analyze": len(state['files_to_analyze']),
-                    "files_analyzed": len(state['files_analyzed']),
-                    "issues_found": len(state['issues_found'])
-                }
-            )
-            span_context.__enter__()
-
         print(f"\nDEBUG reasoning_node: Step {state['current_step']}/{state['max_steps']}")
         print(f"  Files to analyze: {len(state['files_to_analyze'])}")
         print(f"  Files analyzed: {len(state['files_analyzed'])}")
@@ -99,9 +85,6 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
             print("DEBUG: Max steps reached, stopping")
             state["should_continue"] = False
             state["final_answer"] = "Maximum steps reached. Generating final report..."
-            if span_context:
-                span_context.update(output={"status": "max_steps_reached"})
-                span_context.__exit__(None, None, None)
             return state
 
         # Check if analysis is complete
@@ -161,43 +144,10 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
         state["messages"].append(response)
         state["current_step"] += 1
 
-        if span_context:
-            try:
-                span_context.update(
-                    output={
-                        "has_tool_calls": has_tools,
-                        "consecutive_no_tool_calls": state["consecutive_no_tool_calls"],
-                        "should_continue": state["should_continue"]
-                    }
-                )
-            except Exception:
-                pass  # Ignore span update errors
-            finally:
-                span_context.__exit__(None, None, None)
-
         return state
 
     async def action_node(state: AgentState) -> AgentState:
         """Node for executing tools based on LLM decision."""
-        # Start span for action node if Langfuse is enabled
-        span_context = None
-        if langfuse_client:
-            # Get the last message which should contain tool calls
-            last_message = state["messages"][-1]
-            tool_calls_info = []
-            if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
-                tool_calls_info = [tc.get('name', str(tc)) for tc in last_message.tool_calls]
-
-            span_context = langfuse_client.start_as_current_span(
-                name="action-node",
-                input={
-                    "current_step": state['current_step'],
-                    "tool_calls": tool_calls_info,
-                    "num_tools": len(tool_calls_info)
-                }
-            )
-            span_context.__enter__()
-
         # Get the last message which should contain tool calls
         last_message = state["messages"][-1]
 
@@ -214,57 +164,16 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
                     tool_call.get("args", {})
                 )
 
-            if span_context:
-                try:
-                    span_context.update(
-                        output={
-                            "tools_executed": [tc["name"] for tc in last_message.tool_calls],
-                            "num_results": len(last_message.tool_calls)
-                        }
-                    )
-                except Exception:
-                    pass
-                finally:
-                    span_context.__exit__(None, None, None)
-
             return result
-
-        if span_context:
-            try:
-                span_context.update(output={"status": "no_tool_calls"})
-            except Exception:
-                pass
-            finally:
-                span_context.__exit__(None, None, None)
 
         return state
 
     async def observation_node(state: AgentState) -> AgentState:
         """Node for observing results and updating state."""
-        # Start span for observation node if Langfuse is enabled
-        span_context = None
-        if langfuse_client:
-            span_context = langfuse_client.start_as_current_span(
-                name="observation-node",
-                input={
-                    "current_step": state['current_step'],
-                    "files_analyzed": len(state['files_analyzed']),
-                    "issues_found": len(state['issues_found'])
-                }
-            )
-            span_context.__enter__()
-
         # Process ALL tool execution results (may be multiple from parallel tool calls)
         tool_messages = [msg for msg in state["messages"] if isinstance(msg, ToolMessage)]
 
         if not tool_messages:
-            if span_context:
-                try:
-                    span_context.update(output={"status": "no_tool_messages"})
-                except Exception:
-                    pass
-                finally:
-                    span_context.__exit__(None, None, None)
             return state
 
         # Process the most recent batch of tool messages
@@ -325,37 +234,10 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
 
         print(f"  Total Progress: {len(state['files_analyzed'])}/{len(state['files_to_analyze'])} files, {len(state['issues_found'])} issues")
 
-        if span_context:
-            try:
-                span_context.update(
-                    output={
-                        "files_processed": len(state['files_analyzed']),
-                        "new_issues": len(state['issues_found']),
-                        "files_to_analyze": len(state['files_to_analyze'])
-                    }
-                )
-            except Exception:
-                pass
-            finally:
-                span_context.__exit__(None, None, None)
-
         return state
 
     async def report_node(state: AgentState) -> AgentState:
         """Node for generating the final report."""
-        # Start span for report node if Langfuse is enabled
-        span_context = None
-        if langfuse_client:
-            span_context = langfuse_client.start_as_current_span(
-                name="report-node",
-                input={
-                    "files_analyzed": len(state['files_analyzed']),
-                    "issues_found": len(state['issues_found']),
-                    "analysis_type": state["analysis_type"]
-                }
-            )
-            span_context.__enter__()
-
         # Generate summary of findings
         issues_summary = await analysis_tools.summarize_findings.ainvoke(state["issues_found"])
 
@@ -379,19 +261,6 @@ def create_agent(config: Optional[Config] = None, langfuse_handler: Optional[Cal
 
         state["final_answer"] = response.content
         state["should_continue"] = False
-
-        if span_context:
-            try:
-                span_context.update(
-                    output={
-                        "report_generated": True,
-                        "report_length": len(response.content)
-                    }
-                )
-            except Exception:
-                pass
-            finally:
-                span_context.__exit__(None, None, None)
 
         return state
 
@@ -479,55 +348,6 @@ async def run_agent(
         if isinstance(config.LANGFUSE_HOST, str):
             os.environ["LANGFUSE_HOST"] = config.LANGFUSE_HOST
 
-        # Initialize handler and client
-        langfuse_handler = CallbackHandler()
-        langfuse_client = get_client()
-
-        # Build descriptive trace name
-        repo_parts = repository_url.rstrip('/').split('/')
-        repo_name = f"{repo_parts[-2]}/{repo_parts[-1]}" if len(repo_parts) >= 2 else "unknown-repo"
-
-        trace_name = f"static-code-analysis-agent: {analysis_type} analysis"
-        if scenario_name:
-            trace_name = f"{trace_name} [{scenario_name}]"
-        trace_name = f"{trace_name} - {repo_name}"
-
-        print(f"✓ Langfuse tracing enabled: {trace_name}")
-
-    # Create initial state
-    initial_state = create_initial_state(
-        repository_url=repository_url,
-        analysis_type=analysis_type
-    )
-
-    # Create agent with Langfuse handler
-    agent = create_agent(config, langfuse_handler)
-
-    # Run the agent with Langfuse callback if available
-    agent_config = {
-        "configurable": {"thread_id": f"analysis_{repository_url}"},
-        "recursion_limit": 50
-    }
-    if langfuse_handler:
-        agent_config["callbacks"] = [langfuse_handler]
-
-    final_state = await agent.ainvoke(initial_state, config=agent_config)
-
-    # Extract and return results
-    result = {
-        "repository": f"{final_state['repository_owner']}/{final_state['repository_name']}",
-        "analysis_type": analysis_type,
-        "files_analyzed": final_state["files_analyzed"],
-        "issues_found": final_state["issues_found"],
-        "final_report": final_state.get("final_answer", "Analysis incomplete"),
-        "steps_taken": final_state["current_step"],
-        "error": final_state.get("error")
-    }
-
-    # Update Langfuse trace with enhanced observability data (Phase 1 improvements)
-    if langfuse_client:
-        from datetime import datetime
-
         # Build descriptive trace name
         repo_parts = repository_url.rstrip('/').split('/')
         repo_name = f"{repo_parts[-2]}/{repo_parts[-1]}" if len(repo_parts) >= 2 else "unknown-repo"
@@ -542,37 +362,16 @@ async def run_agent(
         trace_session_id = session_id or f"analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         # Prepare tags
-        additional_tags = []
-
-        # Add status tags
-        if final_state.get("error"):
-            additional_tags.append("error")
-        else:
-            additional_tags.append("success")
-
-        # Add severity tags based on issues found
-        severity_counts = {}
-        for issue in final_state.get("issues_found", []):
-            severity = issue.get("severity", "UNKNOWN")
-            severity_counts[severity] = severity_counts.get(severity, 0) + 1
-
-        if severity_counts.get("CRITICAL", 0) > 0:
-            additional_tags.append("has-critical-issues")
-        if severity_counts.get("HIGH", 0) > 0:
-            additional_tags.append("has-high-issues")
-
-        # Combine with initial tags
-        all_tags = [
+        tags = [
             "static-analysis",
             analysis_type,
             "langgraph",
             "production",
         ]
         if scenario_name:
-            all_tags.append(f"scenario:{scenario_name}")
-        all_tags.extend(additional_tags)
+            tags.append(f"scenario:{scenario_name}")
 
-        # Prepare metadata (use config for agent identity)
+        # Prepare metadata
         metadata = {
             "agent": config.AGENT_NAME,
             "demo_name": config.AGENT_DEMO_NAME,
@@ -580,55 +379,124 @@ async def run_agent(
             "scenario": scenario_name,
             "repository": {
                 "url": repository_url,
-                "owner": final_state["repository_owner"],
-                "name": final_state["repository_name"]
+                "owner": repo_parts[-2] if len(repo_parts) >= 2 else "unknown",
+                "name": repo_parts[-1] if len(repo_parts) >= 1 else "unknown"
             },
             "analysis": {
                 "type": analysis_type,
                 "model": config.MODEL_NAME,
                 "temperature": config.TEMPERATURE,
-                "max_steps": final_state.get("max_steps", 20)
-            },
-            "results": {
-                "files_analyzed": len(final_state["files_analyzed"]),
-                "total_files": len(final_state["files_to_analyze"]),
-                "issues_found": len(final_state["issues_found"]),
-                "severity_breakdown": {
-                    "CRITICAL": severity_counts.get("CRITICAL", 0),
-                    "HIGH": severity_counts.get("HIGH", 0),
-                    "MEDIUM": severity_counts.get("MEDIUM", 0),
-                    "LOW": severity_counts.get("LOW", 0),
-                }
-            },
-            "execution": {
-                "steps_taken": final_state["current_step"],
-                "completed": final_state["should_continue"] == False,
-                "has_error": final_state.get("error") is not None
             }
         }
 
-        # Set version for A/B testing and tracking changes
-        version = f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
+        # Get Langfuse client (will create trace later)
+        langfuse_client = get_client()
 
-        # Update the current trace with all improvements
+        print(f"✓ Langfuse tracing enabled: {trace_name}")
+
+    # Create initial state
+    initial_state = create_initial_state(
+        repository_url=repository_url,
+        analysis_type=analysis_type
+    )
+
+    # Create agent with Langfuse handler
+    agent = create_agent(config, langfuse_handler)
+
+    # Run the agent with Langfuse callback if available
+    if langfuse_client:
+        # Create handler
+        from langfuse.langchain import CallbackHandler
+        langfuse_handler = CallbackHandler()
+
+    agent_config = {
+        "configurable": {"thread_id": f"analysis_{repository_url}"},
+        "recursion_limit": 50,
+        "run_name": trace_name if langfuse_handler else None
+    }
+    if langfuse_handler:
+        agent_config["callbacks"] = [langfuse_handler]
+
+    # Execute agent
+    final_state = await agent.ainvoke(initial_state, config=agent_config)
+
+    # Update trace with metadata after execution (within same context)
+    if langfuse_client:
         try:
             langfuse_client.update_current_trace(
                 name=trace_name,
                 user_id=trace_user_id,
                 session_id=trace_session_id,
-                tags=all_tags,
+                tags=tags,
                 metadata=metadata,
-                version=version
+                version=f"v{config.MODEL_NAME}_{config.TEMPERATURE}"
             )
-            print(f"✓ Trace updated with enhanced observability:")
-            print(f"  - Name: {trace_name}")
-            print(f"  - User: {trace_user_id}")
-            print(f"  - Session: {trace_session_id}")
-            print(f"  - Scenario: {scenario_name or 'N/A'}")
-            print(f"  - Tags: {', '.join(all_tags)}")
-            print(f"  - Version: {version}")
+            langfuse_client.flush()
         except Exception as e:
-            print(f"⚠ Failed to update trace metadata: {e}")
+            print(f"⚠ Could not update trace: {e}")
+
+    # Extract and return results
+    result = {
+        "repository": f"{final_state['repository_owner']}/{final_state['repository_name']}",
+        "analysis_type": analysis_type,
+        "files_analyzed": final_state["files_analyzed"],
+        "issues_found": final_state["issues_found"],
+        "final_report": final_state.get("final_answer", "Analysis incomplete"),
+        "steps_taken": final_state["current_step"],
+        "error": final_state.get("error")
+    }
+
+    # Update trace with results metadata (add to existing metadata)
+    if langfuse_handler:
+        # Calculate severity breakdown
+        severity_counts = {}
+        for issue in final_state.get("issues_found", []):
+            severity = issue.get("severity", "UNKNOWN")
+            severity_counts[severity] = severity_counts.get(severity, 0) + 1
+
+        # Add result-specific tags
+        result_tags = []
+        if final_state.get("error"):
+            result_tags.append("error")
+        else:
+            result_tags.append("success")
+
+        if severity_counts.get("CRITICAL", 0) > 0:
+            result_tags.append("has-critical-issues")
+        if severity_counts.get("HIGH", 0) > 0:
+            result_tags.append("has-high-issues")
+
+        # Update trace with results
+        try:
+            langfuse_handler.langfuse.score(
+                name="analysis_completeness",
+                value=len(final_state["files_analyzed"]) / max(len(final_state["files_to_analyze"]), 1),
+                comment=f"Analyzed {len(final_state['files_analyzed'])} of {len(final_state['files_to_analyze'])} files"
+            )
+
+            # Update metadata with results
+            langfuse_handler.update_current_observation(
+                metadata={
+                    "results": {
+                        "files_analyzed": len(final_state["files_analyzed"]),
+                        "total_files": len(final_state["files_to_analyze"]),
+                        "issues_found": len(final_state["issues_found"]),
+                        "severity_breakdown": severity_counts
+                    },
+                    "execution": {
+                        "steps_taken": final_state["current_step"],
+                        "completed": not final_state["should_continue"],
+                        "has_error": final_state.get("error") is not None
+                    }
+                }
+            )
+
+            print(f"✓ Trace results updated:")
+            print(f"  - Files analyzed: {len(final_state['files_analyzed'])}/{len(final_state['files_to_analyze'])}")
+            print(f"  - Issues found: {len(final_state['issues_found'])}")
+            print(f"  - Status tags: {', '.join(result_tags)}")
+        except Exception as e:
+            print(f"⚠ Could not update trace results: {e}")
 
     return result
 
