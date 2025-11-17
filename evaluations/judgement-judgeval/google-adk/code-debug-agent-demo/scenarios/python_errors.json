@@ -1,0 +1,44 @@
+{
+  "scenarios": [
+    {
+      "name": "Python Import Error - Missing Module",
+      "description": "Test handling of missing Python module import",
+      "error_message": "ImportError: No module named 'pandas'",
+      "programming_language": "python",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["pip install", "pandas", "install"]
+    },
+    {
+      "name": "Python AttributeError",
+      "description": "Test handling of AttributeError on missing method",
+      "error_message": "AttributeError: 'list' object has no attribute 'append_unique'",
+      "programming_language": "python",
+      "expected_tools": ["search_stack_exchange_for_error", "analyze_error_and_suggest_fix"],
+      "expected_keywords": ["list", "method", "attribute", "custom"]
+    },
+    {
+      "name": "Python TypeError - Type Mismatch",
+      "description": "Test handling of type errors",
+      "error_message": "TypeError: unsupported operand type(s) for +: 'int' and 'str'",
+      "programming_language": "python",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["type", "conversion", "str", "int"]
+    },
+    {
+      "name": "Python ValueError - Invalid Value",
+      "description": "Test handling of invalid values",
+      "error_message": "ValueError: invalid literal for int() with base 10: 'abc'",
+      "programming_language": "python",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["conversion", "validate", "int", "string"]
+    },
+    {
+      "name": "Python IndexError",
+      "description": "Test handling of index out of range",
+      "error_message": "IndexError: list index out of range",
+      "programming_language": "python",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["index", "range", "check", "length"]
+    }
+  ]
+}

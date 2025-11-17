@@ -1,0 +1,38 @@
+{
+  "scenarios": [
+    {
+      "name": "JavaScript TypeError - Cannot Read Property",
+      "description": "Test handling of undefined property access",
+      "error_message": "TypeError: Cannot read property 'map' of undefined",
+      "programming_language": "javascript",
+      "framework": "react",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["undefined", "null", "check", "optional chaining"]
+    },
+    {
+      "name": "JavaScript ReferenceError",
+      "description": "Test handling of undefined variable",
+      "error_message": "ReferenceError: myVariable is not defined",
+      "programming_language": "javascript",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["declare", "variable", "scope", "define"]
+    },
+    {
+      "name": "React Hook Error",
+      "description": "Test handling of React hooks rules violation",
+      "error_message": "React Hook 'useState' is called conditionally. React Hooks must be called in the exact same order in every component render.",
+      "programming_language": "javascript",
+      "framework": "react",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["hooks", "rules", "conditional", "order"]
+    },
+    {
+      "name": "JavaScript Async Error",
+      "description": "Test handling of promise rejection",
+      "error_message": "UnhandledPromiseRejectionWarning: Error: Network request failed",
+      "programming_language": "javascript",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["async", "await", "catch", "promise"]
+    }
+  ]
+}
