@@ -1,0 +1,45 @@
+{
+  "scenarios": [
+    {
+      "name": "TypeScript Type Error",
+      "description": "Test handling of TypeScript type mismatches",
+      "error_message": "Type 'string' is not assignable to type 'number'",
+      "programming_language": "typescript",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["type", "typescript", "interface", "cast"]
+    },
+    {
+      "name": "Django Migration Error",
+      "description": "Test handling of Django migration conflicts",
+      "error_message": "django.db.migrations.exceptions.InconsistentMigrationHistory: Migration admin.0001_initial is applied before its dependency auth.0001_initial",
+      "programming_language": "python",
+      "framework": "django",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["migration", "django", "reset", "fake"]
+    },
+    {
+      "name": "CORS Error",
+      "description": "Test handling of CORS policy errors",
+      "error_message": "Access to fetch at 'https://api.example.com/data' from origin 'http://localhost:3000' has been blocked by CORS policy",
+      "programming_language": "javascript",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["cors", "headers", "proxy", "origin"]
+    },
+    {
+      "name": "Git Merge Conflict",
+      "description": "Test handling of Git merge conflicts",
+      "error_message": "CONFLICT (content): Merge conflict in app.js\nAutomatic merge failed; fix conflicts and then commit the result.",
+      "expected_tools": ["search_stack_exchange_general"],
+      "expected_keywords": ["conflict", "merge", "resolve", "git"]
+    },
+    {
+      "name": "Node.js Module Not Found",
+      "description": "Test handling of Node.js module errors",
+      "error_message": "Error: Cannot find module 'express'",
+      "programming_language": "javascript",
+      "framework": "nodejs",
+      "expected_tools": ["search_stack_exchange_for_error"],
+      "expected_keywords": ["npm install", "express", "node_modules", "package.json"]
+    }
+  ]
+}
