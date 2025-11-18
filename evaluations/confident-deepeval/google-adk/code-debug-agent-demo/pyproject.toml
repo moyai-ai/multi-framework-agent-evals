@@ -1,0 +1,33 @@
+[project]
+name = "google-adk-agent-eval"
+version = "0.1.0"
+description = "DeepEval-based evaluation framework for Google ADK Code Debug Agent"
+readme = "README.md"
+authors = [
+    { name = "robert-moyai", email = "robert@moyai.ai" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "deepeval>=1.5.0",
+    "google-adk>=1.0.0",
+    "google-cloud-aiplatform[adk,agent-engines]>=1.93.0",
+    "google-genai>=1.9.0",
+    "beautifulsoup4>=4.12.0",
+    "stackapi>=0.3.0",
+    "pydantic>=2.10.0",
+    "httpx>=0.28.0",
+    "python-dotenv>=1.0.0",
+    "langfuse>=2.0.0",
+    "langsmith>=0.2.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.26.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = [".", "src"]
+
+[build-system]
+requires = ["uv_build>=0.9.5,<0.10.0"]
+build-backend = "uv_build"
